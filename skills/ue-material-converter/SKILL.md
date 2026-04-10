@@ -118,71 +118,9 @@ When users provide UE material blueprint text (copied as code), analyze the node
 输出：FogColor (float3)
 ```
 
-**对应蓝图复制文本**（Expression-Only 格式，所有引用节点自包含）：
-```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThinColor"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionVectorParameter_0"
-      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
-      ParameterName="FogThinColor"
-      Group="Color"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=780
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
-   NodePosX=2176
-   NodePosY=780
-   bCanRenameNode=True
-End Object
+**对应蓝图复制文本**（UE 原生格式，粘贴后自动建立连线）：
 
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThickColor"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1"
-   End Object
-   Begin Object Name="MaterialExpressionVectorParameter_1"
-      DefaultValue=(R=0.005605,G=0.090842,B=0.250158,A=1.000000)
-      ParameterName="FogThickColor"
-      Group="Color"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=1056
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_1'"
-   NodePosX=2176
-   NodePosY=1056
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Density"
-   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionScalarParameter_0"
-      DefaultValue=0.500000
-      ParameterName="FogDensity"
-      Group="Fog"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=920
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionScalarParameter'MaterialExpressionScalarParameter_0'"
-   NodePosX=2176
-   NodePosY=920
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
-   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
-   End Object
-   Begin Object Name="MaterialExpressionLinearInterpolate_0"
-      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      Alpha=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
-      MaterialExpressionEditorX=2688
-      MaterialExpressionEditorY=920
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
-   NodePosX=2688
-   NodePosY=920
-End Object
-```
+（完整蓝图文本较长，仅展示 Lerp 部分的简化逻辑说明：ThinColor.Output → Lerp.A, ThickColor.Output → Lerp.B, Density.Output → Lerp.Alpha，格式遵循「蓝图复制文本格式规范」章节的模板，包含完整的 `CustomProperties Pin` 和双向 `LinkedTo`）
 
 #### 示例2：亮度计算（适合蓝图节点）
 
@@ -252,130 +190,142 @@ return MS_PerlinNoiseFBM_Inst.compute(UV, Time, Scale, Speed, Iter);
 - ✓ 无需维护 HLSL 代码
 ```
 
-### 蓝图复制文本格式规范
+### 蓝图复制文本格式规范（基于 UE 原生格式）
 
-当生成蓝图复制文本时，**必须严格遵循以下格式规范**，否则粘贴到 UE 材质编辑器中会失败或导致崩溃。
+当生成蓝图复制文本时，**必须严格遵循以下 UE 原生序列化格式**，否则粘贴到 UE 材质编辑器中会导致节点无法连接或崩溃。
 
 #### 禁止规则
 
 1. **禁止生成 `MaterialExpressionComment`（Comment 框）** — AI 无法生成有效的 Comment 框序列化数据，粘贴会导致 UE 材质编辑器崩溃
-2. **禁止生成 `CustomProperties Pin` 块** — 其中的 PinId、PersistentGuid、LinkedTo 等字段由 UE 编辑器内部自动管理，AI 无法生成合法的 GUID 值，包含这些字段会导致连接失败
-3. **禁止使用假 GUID** — 不要使用 `TEXCOORD_PIN_OUT`、`MUL1_A_PERSIST` 等非法标识符代替 GUID
+2. **禁止使用非法 GUID** — 不要使用 `TEXCOORD_PIN_OUT`、`MUL1_A_PERSIST` 等文字标识符代替 GUID，必须使用 32 位十六进制格式
 
-#### 节点连接机制（Expression-Only 格式）
+#### GUID 生成规则
 
-节点之间的连接**仅通过** MaterialExpression 内部对象的输入属性 `Expression=` 引用来建立：
+所有 GUID（PinId、NodeGuid、MaterialExpressionGuid）使用 **32 位十六进制字符串**，格式为大写字母+数字，左侧补零。为简化生成，使用**递增编号方案**：
 
+- **NodeGuid**: `00000000000000000000000000000N01` — N 从 1 递增（节点编号）
+- **MaterialExpressionGuid**: `00000000000000000000000000000N02` — 对应节点的 Expression GUID
+- **PinId**: `00000000000000000000000N0P000001` — N=节点编号，P=Pin 序号（1=第一个输入, 2=第二个输入, ..., 9=Output）
+
+例如第 3 个节点的第 2 个输入 Pin：`0000000000000000000000030200001`（补齐到 32 位）
+
+实际生成时，只需确保每个 GUID **全局唯一且为 32 位十六进制**即可。推荐简单递增方案：
+- PinId: `A0000000000000000000000000000001`, `A0000000000000000000000000000002`, ...
+- NodeGuid: `B0000000000000000000000000000001`, `B0000000000000000000000000000002`, ...
+- MaterialExpressionGuid: `C0000000000000000000000000000001`, `C0000000000000000000000000000002`, ...
+
+#### 节点连接机制（双层连接）
+
+UE 材质编辑器粘贴时需要**两层连接信息同时存在**：
+
+**第一层：Expression 引用**（MaterialExpression 对象层面，用于材质编译）
 ```
-A=(Expression="/Script/Engine.MaterialExpressionType'OuterNodeName.InnerExpressionName'")
+A=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const.MaterialExpressionConstant_0'")
 ```
 
-- `OuterNodeName` = MaterialGraphNode 的 `Name` 属性
-- `InnerExpressionName` = 内部 MaterialExpression 对象的 `Name` 属性
-- UE 粘贴时会根据 Expression 引用路径自动重建所有 Pin 连接
+**第二层：CustomProperties Pin 的 LinkedTo**（EdGraph 层面，用于编辑器图形连线）
+```
+CustomProperties Pin (PinId=A0000000000000000000000000000001,PinName="A",...,LinkedTo=(MaterialGraphNode_Const A0000000000000000000000000000010,),...)
+```
+
+**关键：连接必须是双向的**——源节点 Output Pin 的 `LinkedTo` 指向目标节点输入 Pin 的 `PinId`，目标节点输入 Pin 的 `LinkedTo` 也必须指回源节点 Output Pin 的 `PinId`。
+
+#### 标准 Pin 模板
+
+**输入 Pin**（方向默认为 Input，不需要 Direction 字段）：
+```
+CustomProperties Pin (PinId=<GUID>,PinName="A",PinType.PinCategory="optional",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.0",LinkedTo=(<SourceNodeName> <SourceOutputPinId>,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+```
+
+**输出 Pin**（必须有 `Direction="EGPD_Output"`）：
+```
+CustomProperties Pin (PinId=<GUID>,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(<TargetNodeName> <TargetInputPinId>,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+```
+
+**未连接的 Pin**：省略 `LinkedTo` 字段，或不输出该 Pin（如果使用 ConstA/ConstB 内联常量）。
 
 #### 标准节点模板
 
-**单输入节点**（如 Floor、Frac、Sin）：
-```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Floor"
-   Begin Object Class=/Script/Engine.MaterialExpressionFloor Name="MaterialExpressionFloor_0"
-   End Object
-   Begin Object Name="MaterialExpressionFloor_0"
-      Input=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Multiply.MaterialExpressionMultiply_0'")
-      MaterialExpressionEditorX=400
-      MaterialExpressionEditorY=200
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionFloor'MaterialExpressionFloor_0'"
-   NodePosX=400
-   NodePosY=200
-End Object
-```
-
-**双输入节点**（如 Add、Multiply、Lerp）：
-```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Multiply"
-   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
-   End Object
-   Begin Object Name="MaterialExpressionMultiply_0"
-      A=(Expression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialGraphNode_TexCoord.MaterialExpressionTextureCoordinate_0'")
-      ConstB=10.000000
-      MaterialExpressionEditorX=224
-      MaterialExpressionEditorY=32
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
-   NodePosX=224
-   NodePosY=32
-End Object
-```
-
-**常量节点**（无输入连接）：
+**常量节点**（Constant，1 个输出 Pin）：
 ```
 Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const1"
    Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_0"
    End Object
    Begin Object Name="MaterialExpressionConstant_0"
-      R=0.500000
-      MaterialExpressionEditorX=100
-      MaterialExpressionEditorY=300
+      R=0.750000
+      MaterialExpressionEditorX=-200
+      MaterialExpressionEditorY=100
+      MaterialExpressionGuid=C0000000000000000000000000000001
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_0'"
-   NodePosX=100
-   NodePosY=300
+   NodePosX=-200
+   NodePosY=100
+   NodeGuid=B0000000000000000000000000000001
+   CustomProperties Pin (PinId=A0000000000000000000000000000001,PinName="Value",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.75",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=True,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000002,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(MaterialGraphNode_Mul1 A0000000000000000000000000000003,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 ```
 
-**VectorParameter 节点**：
+**双输入节点**（Multiply，2 个输入 Pin + 1 个输出 Pin）：
 ```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Color"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul1"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
    End Object
-   Begin Object Name="MaterialExpressionVectorParameter_0"
-      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
-      ParameterName="MyColor"
-      Group="Color"
-      MaterialExpressionEditorX=200
-      MaterialExpressionEditorY=780
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const1.MaterialExpressionConstant_0'")
+      MaterialExpressionEditorX=0
+      MaterialExpressionEditorY=0
+      MaterialExpressionGuid=C0000000000000000000000000000002
    End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
-   NodePosX=200
-   NodePosY=780
-   bCanRenameNode=True
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=B0000000000000000000000000000002
+   CustomProperties Pin (PinId=A0000000000000000000000000000003,PinName="A",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.0",LinkedTo=(MaterialGraphNode_Const1 A0000000000000000000000000000002,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000004,PinName="B",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="1.0",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000005,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 ```
 
-#### 常用节点 Expression 输入属性映射
+注意上面示例中 **Const1 的 Output** (`A...0002`) → **Mul1 的 A** (`A...0003`) 是**双向 LinkedTo**。
 
-| 节点类型 | 输入属性名 | 说明 |
-|---------|-----------|------|
-| `MaterialExpressionAdd` | `A=`, `B=` | 加法 A+B |
-| `MaterialExpressionMultiply` | `A=`, `B=` | 乘法 A*B，可用 `ConstA`/`ConstB` 替代常量输入 |
-| `MaterialExpressionSubtract` | `A=`, `B=` | 减法 A-B |
-| `MaterialExpressionDivide` | `A=`, `B=` | 除法 A/B |
-| `MaterialExpressionLinearInterpolate` | `A=`, `B=`, `Alpha=` | 线性插值 |
-| `MaterialExpressionDotProduct` | `A=`, `B=` | 点积 |
-| `MaterialExpressionCrossProduct` | `A=`, `B=` | 叉积 |
-| `MaterialExpressionFloor` | `Input=` | 向下取整 |
-| `MaterialExpressionFraction` | `Input=` | 小数部分 (frac) |
-| `MaterialExpressionSine` | `Input=` | 正弦（注意 UE 默认周期为 0-1 而非 0-2π） |
-| `MaterialExpressionCosine` | `Input=` | 余弦 |
-| `MaterialExpressionAbs` | `Input=` | 绝对值 |
-| `MaterialExpressionSaturate` | `Input=` | Clamp 到 [0,1] |
-| `MaterialExpressionOneMinus` | `Input=` | 1-X |
-| `MaterialExpressionClamp` | `Input=`, `Min=`, `Max=` | 范围限制 |
-| `MaterialExpressionIf` | `A=`, `B=`, `AGreaterThanB=`, `AEqualsB=`, `ALessThanB=` | 条件分支 |
-| `MaterialExpressionStaticSwitchParameter` | `A=`, `B=` | 静态开关，A=True 分支，B=False 分支 |
-| `MaterialExpressionAppendVector` | `A=`, `B=` | 向量拼接 |
-| `MaterialExpressionComponentMask` | `Input=` | 分量掩码，配合 `R=True`/`G=True` 等 |
-| `MaterialExpressionTextureCoordinate` | 无输入 | UV 坐标，配合 `CoordinateIndex=` |
-| `MaterialExpressionConstant` | 无输入 | 标量常量，值设置在 `R=` |
-| `MaterialExpressionConstant2Vector` | 无输入 | 二维常量，`R=`, `G=` |
-| `MaterialExpressionConstant3Vector` | 无输入 | 三维常量，`Constant=(R=,G=,B=)` |
-| `MaterialExpressionScalarParameter` | 无输入 | 标量参数，`ParameterName=`, `DefaultValue=` |
-| `MaterialExpressionVectorParameter` | 无输入 | 向量参数，`ParameterName=`, `DefaultValue=(R=,G=,B=,A=)` |
-| `MaterialExpressionCustom` | `Code="..."` | Custom 节点，HLSL 代码 |
-| `MaterialExpressionFunctionInput` | 无输入 | 材质函数输入，`InputName=`, `InputType=` |
-| `MaterialExpressionFunctionOutput` | `A=` | 材质函数输出，`OutputName=` |
+#### 常用节点 Pin 结构
+
+| 节点类型 | 输入 Pin (PinName) | Expression 属性 | 输出 Pin |
+|---------|-------------------|----------------|---------|
+| `Constant` | Value (bNotConnectable=True) | `R=` | Output |
+| `Constant2Vector` | Value (bNotConnectable=True) | `R=`, `G=` | Output |
+| `Constant3Vector` | Value (bNotConnectable=True) | `Constant=(R=,G=,B=)` | Output |
+| `Add` | A, B | `A=`, `B=` | Output |
+| `Multiply` | A, B | `A=`, `B=`（或 `ConstA`/`ConstB`） | Output |
+| `Subtract` | A, B | `A=`, `B=` | Output |
+| `Divide` | A, B | `A=`, `B=` | Output |
+| `LinearInterpolate` | A, B, Alpha | `A=`, `B=`, `Alpha=` | Output |
+| `DotProduct` | A, B | `A=`, `B=` | Output |
+| `Floor` | Input | `Input=` | Output |
+| `Frac` | Input | `Input=` | Output |
+| `Sine` | Input | `Input=` | Output |
+| `Cosine` | Input | `Input=` | Output |
+| `Abs` | Input | `Input=` | Output |
+| `OneMinus` | Input | `Input=` | Output |
+| `Saturate` | Input | `Input=` | Output |
+| `Clamp` | Input, Min, Max | `Input=`, `Min=`, `Max=` | Output |
+| `If` | A, B, AGreaterThanB, AEqualsB, ALessThanB | 同名 | Output |
+| `AppendVector` | A, B | `A=`, `B=` | Output |
+| `ComponentMask` | Input | `Input=`，配合 `R=True`/`G=True` | Output |
+| `TextureCoordinate` | 无 | `CoordinateIndex=` | Output |
+| `ScalarParameter` | Value (bNotConnectable=True) | `ParameterName=`, `DefaultValue=` | Output |
+| `VectorParameter` | Value (bNotConnectable=True) | `ParameterName=`, `DefaultValue=` | Output |
+| `FunctionInput` | Preview (可选) | `InputName=`, `InputType=` | Output |
+| `FunctionOutput` | A | `A=`, `OutputName=` | 无 |
+| `StaticSwitchParameter` | A (True), B (False) | `A=`, `B=`, `ParameterName=` | Output |
+
+#### Pin 的 PinSubCategory 颜色映射
+
+| PinSubCategory | 含义 |
+|---------------|------|
+| `"red"` | 通用输入（float/vector） |
+| `""` (空) | 输出 Pin 使用空字符串 |
 
 #### 布局指南
 
@@ -384,74 +334,48 @@ End Object
 - 输入节点（TexCoord、Constant、Parameter）放在最左侧
 - 输出节点（FunctionOutput、Material 属性）放在最右侧
 
-#### 完整示例：简单 Lerp 连接
+#### 完整示例：Constant → Multiply 连接（最小可验证示例）
+
+以下示例展示了两个节点的完整连接格式，可直接复制粘贴到 UE 材质编辑器中验证：
 
 ```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThinColor"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_0"
    End Object
-   Begin Object Name="MaterialExpressionVectorParameter_0"
-      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
-      ParameterName="FogThinColor"
-      Group="Color"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=780
+   Begin Object Name="MaterialExpressionConstant_0"
+      R=0.750000
+      MaterialExpressionEditorX=-200
+      MaterialExpressionEditorY=0
+      MaterialExpressionGuid=C0000000000000000000000000000001
    End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
-   NodePosX=2176
-   NodePosY=780
-   bCanRenameNode=True
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_0'"
+   NodePosX=-200
+   NodePosY=0
+   NodeGuid=B0000000000000000000000000000001
+   CustomProperties Pin (PinId=A0000000000000000000000000000001,PinName="Value",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.75",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=True,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000002,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(MaterialGraphNode_Mul A0000000000000000000000000000003,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThickColor"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1"
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
    End Object
-   Begin Object Name="MaterialExpressionVectorParameter_1"
-      DefaultValue=(R=0.005605,G=0.090842,B=0.250158,A=1.000000)
-      ParameterName="FogThickColor"
-      Group="Color"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=1056
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const.MaterialExpressionConstant_0'")
+      MaterialExpressionEditorX=0
+      MaterialExpressionEditorY=0
+      MaterialExpressionGuid=C0000000000000000000000000000002
    End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_1'"
-   NodePosX=2176
-   NodePosY=1056
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Density"
-   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionScalarParameter_0"
-      DefaultValue=0.500000
-      ParameterName="FogDensity"
-      Group="Fog"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=920
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionScalarParameter'MaterialExpressionScalarParameter_0'"
-   NodePosX=2176
-   NodePosY=920
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
-   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
-   End Object
-   Begin Object Name="MaterialExpressionLinearInterpolate_0"
-      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      Alpha=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
-      MaterialExpressionEditorX=2688
-      MaterialExpressionEditorY=920
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
-   NodePosX=2688
-   NodePosY=920
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=B0000000000000000000000000000002
+   CustomProperties Pin (PinId=A0000000000000000000000000000003,PinName="A",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.0",LinkedTo=(MaterialGraphNode_Const A0000000000000000000000000000002,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000004,PinName="B",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="1.0",PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000005,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 ```
 
-粘贴此文本到 UE 材质编辑器后，四个节点会自动出现并正确连接：ThinColor → Lerp.A，ThickColor → Lerp.B，Density → Lerp.Alpha。
+**连接验证**：Const(0.75) 的 Output Pin (`A...0002`) 双向连接到 Mul 的 A Pin (`A...0003`)。粘贴后应自动出现连线。
 
 ---
 

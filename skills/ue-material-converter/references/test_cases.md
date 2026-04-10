@@ -392,117 +392,17 @@ return MS_SDFScene_Inst.compute(Position);
 输出：FogColor (float3)
 ```
 
-**蓝图复制文本**（Expression-Only 格式，粘贴后自动连接）：
+**蓝图复制文本**（UE 原生格式，包含 CustomProperties Pin + 双向 LinkedTo，粘贴后自动连线）：
+
+（蓝图文本较长，包含 7 个节点，每个节点需完整的 CustomProperties Pin 块。格式遵循 SKILL.md「蓝图复制文本格式规范」章节。关键连接关系：）
 ```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThinColor"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionVectorParameter_0"
-      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
-      ParameterName="FogThinColor"
-      Group="Color"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=780
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
-   NodePosX=2176
-   NodePosY=780
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThickColor"
-   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1"
-   End Object
-   Begin Object Name="MaterialExpressionVectorParameter_1"
-      DefaultValue=(R=0.005605,G=0.090842,B=0.250158,A=1.000000)
-      ParameterName="FogThickColor"
-      Group="Color"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=1056
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_1'"
-   NodePosX=2176
-   NodePosY=1056
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Density"
-   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionScalarParameter_0"
-      DefaultValue=0.500000
-      ParameterName="FogDensity"
-      Group="Fog"
-      MaterialExpressionEditorX=2176
-      MaterialExpressionEditorY=920
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionScalarParameter'MaterialExpressionScalarParameter_0'"
-   NodePosX=2176
-   NodePosY=920
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ComponentMask"
-   Begin Object Class=/Script/Engine.MaterialExpressionComponentMask Name="MaterialExpressionComponentMask_0"
-   End Object
-   Begin Object Name="MaterialExpressionComponentMask_0"
-      Input=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
-      R=True
-      MaterialExpressionEditorX=2528
-      MaterialExpressionEditorY=816
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionComponentMask'MaterialExpressionComponentMask_0'"
-   NodePosX=2528
-   NodePosY=816
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
-   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
-   End Object
-   Begin Object Name="MaterialExpressionLinearInterpolate_0"
-      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      Alpha=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
-      MaterialExpressionEditorX=2688
-      MaterialExpressionEditorY=1024
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
-   NodePosX=2688
-   NodePosY=1024
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_CurveAtlas"
-   Begin Object Class=/Script/Engine.MaterialExpressionCurveAtlasRowParameter Name="MaterialExpressionCurveAtlasRowParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionCurveAtlasRowParameter_0"
-      Curve="/Script/Engine.CurveLinearColor'/Game/Textures/CLC_MistyFog.CLC_MistyFog'"
-      Atlas="/Script/Engine.CurveLinearColorAtlas'/Game/Textures/CCA_Fog.CCA_Fog'"
-      InputTime=(Expression="/Script/Engine.MaterialExpressionComponentMask'MaterialGraphNode_ComponentMask.MaterialExpressionComponentMask_0'")
-      ParameterName="FogColorGradient"
-      MaterialExpressionEditorX=2688
-      MaterialExpressionEditorY=816
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionCurveAtlasRowParameter'MaterialExpressionCurveAtlasRowParameter_0'"
-   NodePosX=2688
-   NodePosY=816
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Switch"
-   Begin Object Class=/Script/Engine.MaterialExpressionStaticSwitchParameter Name="MaterialExpressionStaticSwitchParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionStaticSwitchParameter_0"
-      A=(Expression="/Script/Engine.MaterialExpressionCurveAtlasRowParameter'MaterialGraphNode_CurveAtlas.MaterialExpressionCurveAtlasRowParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      B=(Expression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialGraphNode_Lerp.MaterialExpressionLinearInterpolate_0'")
-      ParameterName="GradientColor"
-      MaterialExpressionEditorX=2912
-      MaterialExpressionEditorY=976
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionStaticSwitchParameter'MaterialExpressionStaticSwitchParameter_0'"
-   NodePosX=2912
-   NodePosY=976
-   bCanRenameNode=True
-End Object
+ThinColor.Output  →  Lerp.A      (双向 LinkedTo)
+ThickColor.Output →  Lerp.B      (双向 LinkedTo)
+Density.Output    →  Lerp.Alpha  (双向 LinkedTo)
+Density.Output    →  ComponentMask.Input (双向 LinkedTo)
+ComponentMask.Output → CurveAtlas.InputTime (双向 LinkedTo)
+CurveAtlas.Output →  Switch.A    (双向 LinkedTo)
+Lerp.Output       →  Switch.B    (双向 LinkedTo)
 ```
 
 ### 节点连接图示（Mermaid）
@@ -526,10 +426,12 @@ graph TD
 - [ ] Lerp 节点参数连接正确（A=ThinColor, B=ThickColor, Alpha=Density）
 - [ ] VectorParameter 默认值正确
 - [ ] CurveAtlas 采样正确
-- [ ] **蓝图格式合规**：使用 Expression-only 格式，无 CustomProperties Pin 块
+- [ ] **UE 原生格式合规**：每个节点包含 NodeGuid、MaterialExpressionGuid、完整 CustomProperties Pin 块
+- [ ] **双向 LinkedTo**：每条连接在源 Output Pin 和目标 Input Pin 中都有 LinkedTo 引用
 - [ ] **无 Comment 框**：不包含 MaterialExpressionComment 节点
 - [ ] **所有 Expression 引用可达**：每个 Expression= 引用的目标节点都在文本中定义
-- [ ] **粘贴连接正确**：粘贴后节点自动连接，无需手动操作
+- [ ] **粘贴连线正确**：粘贴后节点自动出现连线，无需手动操作
+- [ ] **GUID 格式合法**：所有 PinId、NodeGuid、MaterialExpressionGuid 为 32 位十六进制字符串
 
 ### 优势说明
 - ✅ 可视化节点连接，易于理解

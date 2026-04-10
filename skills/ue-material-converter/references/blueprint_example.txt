@@ -1,10 +1,14 @@
-// UE蓝图材质节点示例
+// UE蓝图材质节点示例（UE 原生格式，包含 CustomProperties Pin + LinkedTo 双向连接）
 
 // ============================================================
-// 示例1：蓝图复制文本格式（Expression-Only 格式）
+// 示例1：Constant2Vector × Constant2Vector → Multiply
 // ============================================================
 
-// 正确的蓝图复制文本格式 — 仅使用 Expression= 引用建立连接：
+// 蓝图逻辑：
+// ConstA(2,3) → Multiply.A
+// ConstB(4,5) → Multiply.B
+// 结果：逐分量乘积 (8, 15)
+
 /*
 Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ConstA"
    Begin Object Class=/Script/Engine.MaterialExpressionConstant2Vector Name="MaterialExpressionConstant2Vector_0"
@@ -12,12 +16,16 @@ Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Co
    Begin Object Name="MaterialExpressionConstant2Vector_0"
       R=2.000000
       G=3.000000
-      MaterialExpressionEditorX=32
-      MaterialExpressionEditorY=32
+      MaterialExpressionEditorX=-400
+      MaterialExpressionEditorY=0
+      MaterialExpressionGuid=C0000000000000000000000000000001
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialExpressionConstant2Vector_0'"
-   NodePosX=32
-   NodePosY=32
+   NodePosX=-400
+   NodePosY=0
+   NodeGuid=B0000000000000000000000000000001
+   CustomProperties Pin (PinId=A0000000000000000000000000000001,PinName="Value",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=True,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000002,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(MaterialGraphNode_Multiply A0000000000000000000000000000005,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 
 Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ConstB"
@@ -26,12 +34,16 @@ Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Co
    Begin Object Name="MaterialExpressionConstant2Vector_1"
       R=4.000000
       G=5.000000
-      MaterialExpressionEditorX=32
-      MaterialExpressionEditorY=128
+      MaterialExpressionEditorX=-400
+      MaterialExpressionEditorY=160
+      MaterialExpressionGuid=C0000000000000000000000000000002
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialExpressionConstant2Vector_1'"
-   NodePosX=32
-   NodePosY=128
+   NodePosX=-400
+   NodePosY=160
+   NodeGuid=B0000000000000000000000000000002
+   CustomProperties Pin (PinId=A0000000000000000000000000000003,PinName="Value",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=True,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000004,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,LinkedTo=(MaterialGraphNode_Multiply A0000000000000000000000000000006,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 
 Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Multiply"
@@ -40,127 +52,43 @@ Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mu
    Begin Object Name="MaterialExpressionMultiply_0"
       A=(Expression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialGraphNode_ConstA.MaterialExpressionConstant2Vector_0'")
       B=(Expression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialGraphNode_ConstB.MaterialExpressionConstant2Vector_1'")
-      MaterialExpressionEditorX=256
+      MaterialExpressionEditorX=-176
       MaterialExpressionEditorY=64
+      MaterialExpressionGuid=C0000000000000000000000000000003
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
-   NodePosX=256
+   NodePosX=-176
    NodePosY=64
+   NodeGuid=B0000000000000000000000000000003
+   CustomProperties Pin (PinId=A0000000000000000000000000000005,PinName="A",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="0.0",LinkedTo=(MaterialGraphNode_ConstA A0000000000000000000000000000002,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000006,PinName="B",PinType.PinCategory="optional",PinType.PinSubCategory="red",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,DefaultValue="1.0",LinkedTo=(MaterialGraphNode_ConstB A0000000000000000000000000000004,),PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
+   CustomProperties Pin (PinId=A0000000000000000000000000000007,PinName="Output",PinFriendlyName=NSLOCTEXT("MaterialGraphNode", "Space", " "),Direction="EGPD_Output",PinType.PinCategory="",PinType.PinSubCategory="",PinType.PinSubCategoryObject=None,PinType.PinSubCategoryMemberReference=(),PinType.PinValueType=(),PinType.ContainerType=None,PinType.bIsReference=False,PinType.bIsConst=False,PinType.bIsWeakPointer=False,PinType.bIsUObjectWrapper=False,PinType.bSerializeAsSinglePrecisionFloat=False,PersistentGuid=00000000000000000000000000000000,bHidden=False,bNotConnectable=False,bDefaultValueIsReadOnly=False,bDefaultValueIsIgnored=False,bAdvancedView=False,bOrphanedPin=False,)
 End Object
 */
 
-// 节点连接说明：
-// - ConstA (2.0, 3.0) → Multiply.A
-// - ConstB (4.0, 5.0) → Multiply.B
-// - 粘贴后自动连接，结果为逐分量乘积 (8.0, 15.0)
-
-// 分析蓝图节点连接：
-// - MaterialGraphNode_ConstA: Constant2Vector 节点（第一个输入）
-// - MaterialGraphNode_ConstB: Constant2Vector 节点（第二个输入）
-// - MaterialGraphNode_Multiply: Multiply 运算节点，通过 Expression= 引用两个常量节点
-
-// 转换为HLSL函数：
-/*
-// Custom节点: MultiplyVector2D
-// Inputs:
-//   - A (float2): 第一个向量
-//   - B (float2): 第二个向量
-// Output: float2 - 逐分量乘积
-
-float2 MultiplyVector2D(float2 A, float2 B)
-{
-    return A * B;
-}
-*/
+// 连接验证:
+// - ConstA.Output (A...0002) ↔ Multiply.A (A...0005) — 双向 LinkedTo
+// - ConstB.Output (A...0004) ↔ Multiply.B (A...0006) — 双向 LinkedTo
+// - Multiply.Output (A...0007) — 未连接（可连接到后续节点）
 
 // ============================================================
-// 示例2：带纹理采样的蓝图复制文本
-// ============================================================
-
-// 蓝图逻辑：
-// 1. TextureCoordinate 节点 → UV
-// 2. TextureSample(UV) → 采样结果
-// 3. Multiply 采样结果 × 2.0 → 增亮输出
-
-/*
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_TexCoord"
-   Begin Object Class=/Script/Engine.MaterialExpressionTextureCoordinate Name="MaterialExpressionTextureCoordinate_0"
-   End Object
-   Begin Object Name="MaterialExpressionTextureCoordinate_0"
-      CoordinateIndex=0
-      MaterialExpressionEditorX=32
-      MaterialExpressionEditorY=64
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialExpressionTextureCoordinate_0'"
-   NodePosX=32
-   NodePosY=64
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_TexSample"
-   Begin Object Class=/Script/Engine.MaterialExpressionTextureSample Name="MaterialExpressionTextureSample_0"
-   End Object
-   Begin Object Name="MaterialExpressionTextureSample_0"
-      Coordinates=(Expression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialGraphNode_TexCoord.MaterialExpressionTextureCoordinate_0'")
-      MaterialExpressionEditorX=256
-      MaterialExpressionEditorY=64
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionTextureSample'MaterialExpressionTextureSample_0'"
-   NodePosX=256
-   NodePosY=64
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Brighten"
-   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
-   End Object
-   Begin Object Name="MaterialExpressionMultiply_0"
-      A=(Expression="/Script/Engine.MaterialExpressionTextureSample'MaterialGraphNode_TexSample.MaterialExpressionTextureSample_0'")
-      ConstB=2.000000
-      MaterialExpressionEditorX=480
-      MaterialExpressionEditorY=64
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
-   NodePosX=480
-   NodePosY=64
-End Object
-*/
-
-// 节点连接说明：
-// - TexCoord → TextureSample.Coordinates
-// - TextureSample → Multiply.A
-// - Multiply.ConstB = 2.0（内联常量，无需额外节点）
-// - 粘贴后自动连接
-
-// 转换为HLSL：
-/*
-// Custom节点: TextureSampleBrightened
-// Inputs:
-//   - UV (float2): 纹理坐标，连接自TexCoord节点
-//   - Texture (Texture2D): 要采样的纹理
-// Output: float3 - 增亮后的RGB颜色
-
-float3 TextureSampleBrightened(float2 UV, Texture2D Texture)
-{
-    float4 SampledColor = Texture2DSample(Texture, TextureSampler, UV);
-    return SampledColor.rgb * 2.0;
-}
-
-// 注意：实际使用时需要在材质中设置：
-// 1. 创建Texture2D参数节点并连接
-// 2. 创建TextureSampler参数节点并连接
-// 或者使用材质自带的TextureObject节点类型
-*/
-
-// ============================================================
-// 蓝图复制文本格式要点
+// 蓝图复制文本格式核心要点
 // ============================================================
 //
-// 1. 节点连接仅通过 Expression= 引用：
-//    A=(Expression="/Script/Engine.ExprType'OuterName.InnerName'")
+// 1. 节点连接需要【双层】信息：
+//    - Expression= 引用（MaterialExpression 对象层面，用于材质编译）
+//    - CustomProperties Pin 的 LinkedTo（EdGraph 层面，用于编辑器图形连线）
 //
-// 2. 禁止使用 CustomProperties Pin 块（PinId/LinkedTo/PersistentGuid）
+// 2. LinkedTo 必须是【双向】的：
+//    源节点 Output Pin 的 LinkedTo → 目标节点 Input Pin 的 PinId
+//    目标节点 Input Pin 的 LinkedTo → 源节点 Output Pin 的 PinId
 //
-// 3. 禁止生成 MaterialExpressionComment（Comment框，会导致UE崩溃）
+// 3. 每个节点需要：NodeGuid、MaterialExpressionGuid（32位十六进制）
 //
-// 4. 对于双输入节点，可使用 ConstA/ConstB 替代常量节点连接
+// 4. 每个 Pin 需要完整的 CustomProperties Pin 块（PinId、PinName、PinType 等）
 //
-// 5. 位置信息用 NodePosX/NodePosY 和 MaterialExpressionEditorX/Y
+// 5. 输出 Pin 必须有 Direction="EGPD_Output"，输入 Pin 不需要 Direction 字段
+//
+// 6. 禁止生成 MaterialExpressionComment（Comment框，会导致UE崩溃）
+//
+// 7. PersistentGuid 统一使用 00000000000000000000000000000000
