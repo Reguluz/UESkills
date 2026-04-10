@@ -1,4 +1,4 @@
-# UE材质转换器 - Skills包
+# UE材质转换器 - Skill
 
 用于Unreal Engine材质开发的代码转换工具。
 
@@ -10,26 +10,62 @@
 
 ## 安装
 
-将此Skills包复制到你的Claude Code项目的`.claude/skills/`目录下：
+此 skill 符合 Claude Code 标准 skill 格式。
 
+### 自动安装（推荐）
+
+将此 skill 目录复制到你的全局 skills 目录：
+
+**Windows:**
 ```bash
-cp -r ue-material-converter ~/.claude/skills/
-# 或Windows
-xcopy /E /I ue-material-converter %USERPROFILE%\.claude\skills\ue-material-converter
+xcopy /E /I skills\ue-material-converter %USERPROFILE%\.agents\skills\ue-material-converter
+mklink /D %USERPROFILE%\.claude\skills\ue-material-converter %USERPROFILE%\.agents\skills\ue-material-converter
+```
+
+**Linux/Mac:**
+```bash
+cp -r skills/ue-material-converter ~/.agents/skills/
+ln -s ~/.agents/skills/ue-material-converter ~/.claude/skills/ue-material-converter
+```
+
+### 手动安装
+
+1. 复制 `ue-material-converter` 目录到 `~/.agents/skills/`
+2. 在 `~/.claude/skills/` 创建符号链接指向该目录
+
+## 目录结构
+
+```
+ue-material-converter/
+├── SKILL.md           # 主 skill 文件（标准格式）
+├── README.md          # 说明文档
+└── references/        # 参考文档
+    ├── advanced_raymarching.glsl    # 高级光线追踪示例
+    ├── blueprint_example.txt         # 蓝图示例
+    ├── function_reference.md         # 函数参考
+    ├── noise_functions.hlsl          # 噪声函数
+    ├── quickstart.md                 # 快速入门
+    ├── shadertoy_basics.glsl         # Shadertoy 基础
+    └── test_cases.md                 # 测试用例
 ```
 
 ## 使用方法
 
 ### 方式1: 直接对话
+
 在对话中直接提及相关需求：
 - "请将这个蓝图转换为HLSL函数"
 - "这个Shadertoy着色器怎么转换为UE Custom节点？"
 - "帮我转换这段GLSL代码"
 
-### 方式2: 使用斜杠命令
-```
-/ue-material-converter
-```
+### 方式2: 自动触发
+
+Claude Code 会根据关键词自动触发此 skill：
+- 蓝图转HLSL
+- 材质节点转换
+- Shadertoy转UE
+- GLSL转Custom节点
+- HLSL转Custom节点
 
 ## 示例
 
@@ -37,8 +73,7 @@ xcopy /E /I ue-material-converter %USERPROFILE%\.claude\skills\ue-material-conve
 
 **输入**：
 ```glsl
-// Shadertoy代码
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     vec2 uv = fragCoord/iResolution.xy;
     vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
@@ -65,9 +100,9 @@ float3 ShaderToyCosinePalette(float2 UV, float Time)
 
 **输入**：
 ```glsl
-vec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
+vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d)
 {
-    return a + b*cos( 6.28318*(c*t+d) );
+    return a + b*cos(6.28318*(c*t+d));
 }
 ```
 
@@ -88,12 +123,6 @@ float3 CosinePalette(float T, float3 A, float3 B, float3 C, float3 D)
 }
 ```
 
-## 配置选项
-
-在`skill.json`中可配置：
-- `ueVersion`: 目标UE版本（默认5.3）
-- `outputFormat`: 输出格式（function/struct/materialFunction）
-
 ## 依赖关系
 
 - Unreal Engine 5.0+
@@ -102,14 +131,19 @@ float3 CosinePalette(float T, float3 A, float3 B, float3 C, float3 D)
 
 ## 常见问题
 
-**Q: 转换后的代码报错？**  
+**Q: 转换后的代码报错？**
 A: 检查UE版本差异，某些函数在不同版本中可能有所不同。
 
-**Q: 纹理采样如何处理？**  
+**Q: 纹理采样如何处理？**
 A: 需要在材质中创建Texture2D参数，然后使用`Texture2DSample(Tex, TexSampler, UV)`。
 
-**Q: Shadertoy的iTime如何替换？**  
+**Q: Shadertoy的iTime如何替换？**
 A: 使用`View.RealTime`或创建自定义时间参数。
+
+## 相关技能
+
+- **ue-materials-rendering** - 材质基础、MID、后处理等渲染概念
+- **ue-niagara-effects** - VFX 和粒子系统的自定义 HLSL
 
 ## 贡献
 
