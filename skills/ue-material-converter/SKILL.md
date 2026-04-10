@@ -377,6 +377,52 @@ End Object
 
 **连接验证**：Const(0.75) 的 Output Pin (`A...0002`) 双向连接到 Mul 的 A Pin (`A...0003`)。粘贴后应自动出现连线。
 
+#### 使用生成脚本（推荐）
+
+由于 UE 蓝图复制文本包含大量重复的 Pin 模板代码，**强烈推荐使用生成脚本**来从简洁的 JSON 定义生成完整文本，大幅降低 token 开销：
+
+**脚本路径**：`skills/ue-material-converter/ue_material_bp_gen.py`
+
+**用法**：输出简洁 JSON 定义，然后调用脚本生成完整蓝图文本：
+```bash
+python ue_material_bp_gen.py input.json -o output.txt
+```
+
+**JSON 输入格式**（以 Constant → Multiply 连接为例）：
+```json
+{
+  "nodes": [
+    {
+      "name": "MaterialGraphNode_Const",
+      "type": "Constant",
+      "pos": [-200, 0],
+      "props": {"R": 0.75}
+    },
+    {
+      "name": "MaterialGraphNode_Mul",
+      "type": "Multiply",
+      "pos": [0, 0],
+      "inputs": {"A": "MaterialGraphNode_Const"}
+    }
+  ]
+}
+```
+
+**支持的节点类型**：Constant, Constant2Vector, Constant3Vector, ScalarParameter, VectorParameter, TextureCoordinate, RealTime, Time, Floor, Frac, Sine, Cosine, Abs, OneMinus, Saturate, ComponentMask, Add, Subtract, Multiply, Divide, DotProduct, CrossProduct, AppendVector, Max, Min, Power, LinearInterpolate, Clamp, If, StaticSwitchParameter, FunctionInput, FunctionOutput, TextureSample, MaterialFunctionCall, Custom
+
+**JSON 字段说明**：
+| 字段 | 必须 | 说明 |
+|------|------|------|
+| `name` | ✓ | 节点唯一名称 |
+| `type` | ✓ | 节点类型（见上方列表） |
+| `pos` | | `[X, Y]` 位置，默认 `[0, 0]` |
+| `props` | | Expression 属性（如 `R`, `ParameterName`, `Code` 等） |
+| `inputs` | | 输入连接：`{"PinName": "源节点名"}` |
+| `input_pins` | | 仅 `MaterialFunctionCall`/`Custom`：自定义输入 Pin 名列表 |
+| `default_values` | | 覆盖输入 Pin 默认值 |
+
+脚本自动处理：GUID 生成、双向 LinkedTo、Expression 引用、完整 Pin 模板展开。
+
 ---
 
 ## Shadertoy/GLSL to Custom Node Conversion
