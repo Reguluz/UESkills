@@ -69,7 +69,7 @@ Claude Code 会根据关键词自动触发此 skill：
 
 ## 示例
 
-### 示例1: Shadertoy转换
+### 示例1: Shadertoy转换（简单函数格式）
 
 **输入**：
 ```glsl
@@ -83,44 +83,82 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
 **输出**：
 ```hlsl
-// Custom节点: ShaderToyCosinePalette
+// Custom节点: CosinePalette
 // Inputs:
 //   - UV (float2): 纹理坐标
 //   - Time (float): 时间参数
 // Output: float3 - RGB颜色
 
-float3 ShaderToyCosinePalette(float2 UV, float Time)
+float3 MS_CosinePalette_compute(float2 UV, float Time)
 {
     float3 col = 0.5 + 0.5 * cos(Time + UV.xyx + float3(0.0, 2.0, 4.0));
     return col;
 }
+
+return MS_CosinePalette_compute(UV, Time);
 ```
 
-### 示例2: GLSL转换
+### 示例2: 复杂算法转换（结构体格式）
 
 **输入**：
 ```glsl
-vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d)
-{
-    return a + b*cos(6.28318*(c*t+d));
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float scene(vec2 uv) {
+    return noise(uv * 3.0) * 0.5 + 0.5;
 }
 ```
 
 **输出**：
 ```hlsl
-// Custom节点: CosinePalette
+// Custom节点: ValueNoise
 // Inputs:
-//   - T (float): 插值参数
-//   - A (float3): 偏移参数
-//   - B (float3): 振幅参数
-//   - C (float3): 频率参数
-//   - D (float3): 相位参数
-// Output: float3 - 调色板颜色
+//   - UV (float2): 纹理坐标
+//   - Scale (float): 缩放系数
+// Output: float - 噪声值 [0,1]
 
-float3 CosinePalette(float T, float3 A, float3 B, float3 C, float3 D)
+struct MS_ValueNoise
 {
-    return A + B * cos(6.28318 * (C * T + D));
+    float hash(float2 p)
+    {
+        return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    float noise(float2 p)
+    {
+        float2 i = floor(p);
+        float2 f = frac(p);
+        f = f * f * (3.0 - 2.0 * f);
+
+        float a = hash(i);
+        float b = hash(i + float2(1.0, 0.0));
+        float c = hash(i + float2(0.0, 1.0));
+        float d = hash(i + float2(1.0, 1.0));
+
+        return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+    }
+
+    float compute(float2 UV, float Scale)
+    {
+        return noise(UV * Scale) * 0.5 + 0.5;
+    }
 }
+
+MS_ValueNoise_Inst;
+return MS_ValueNoise_Inst.compute(UV, Scale);
 ```
 
 ## 依赖关系

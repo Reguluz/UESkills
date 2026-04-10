@@ -125,7 +125,9 @@ float4 Color = Texture2DSampleLevel(TextureParam, TextureParamSampler, UV, MipLe
 
 ## Output Format
 
-### Custom Node Template
+### Standard Custom Node Template
+
+用于简单函数，直接返回计算结果：
 
 ```hlsl
 // {{Description}}
@@ -138,7 +140,39 @@ float4 Color = Texture2DSampleLevel(TextureParam, TextureParamSampler, UV, MipLe
 }
 ```
 
+### Struct-Based Template (推荐)
+
+用于复杂算法，使用 struct 包装所有函数：
+
+```hlsl
+struct MS_{{FunctionName}}
+{
+    // 辅助函数定义
+    {{ReturnType}} {{HelperFunctionName}}({{Parameters}})
+    {
+        {{FunctionBody}}
+    }
+
+    // 主计算函数
+    {{ReturnType}} compute({{Parameters}})
+    {
+        {{FunctionBody}}
+    }
+}
+
+MS_{{FunctionName}}_Inst;
+return MS_{{FunctionName}}_Inst.compute({{Arguments}});
+```
+
+**Struct 命名规则**：
+- 使用 `MS_` 前缀（Material Structure）
+- 结构体函数使用驼峰命名，如 `perlinNoise`, `fbm`
+- 主计算函数统一命名为 `compute`
+- 实例名使用 `MS_{{FunctionName}}_Inst` 格式
+
 ### Example Output
+
+**简单函数示例**：
 
 **Input (Shadertoy)**:
 ```glsl
@@ -152,44 +186,132 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
 **Output (UE Custom Node)**:
 ```hlsl
-// Custom Node: ShaderToyCosinePalette
+// Cosine Palette - 简单函数格式
 // Inputs:
 //   - UV (float2): Texture coordinates
 //   - Time (float): Time parameter
 // Output: float3 - RGB color
 
-float3 ShaderToyCosinePalette(float2 UV, float Time)
+float3 MS_CosinePalette_compute(float2 UV, float Time)
 {
     float3 col = 0.5 + 0.5 * cos(Time + UV.xyx + float3(0.0, 2.0, 4.0));
     return col;
 }
+
+return MS_CosinePalette_compute(UV, Time);
+```
+
+**复杂算法示例（Struct 格式）**：
+
+```hlsl
+// Perlin Noise FBM
+// Inputs:
+//   - UV (float2): Texture coordinates
+//   - Time (float): Time parameter
+//   - Scale (float): Noise scale
+//   - Speed (float): Animation speed
+//   - Iter (int): FBM iterations
+// Output: float - Noise value 0-1
+
+struct MS_PerlinNoiseFBM
+{
+    float3 hash3(float3 p)
+    {
+        p = float3(
+            dot(p, float3(127.1, 311.7, 74.7)),
+            dot(p, float3(269.5, 183.3, 246.1)),
+            dot(p, float3(113.5, 271.9, 124.6))
+        );
+        return -1.0 + 2.0 * frac(sin(p) * 43758.5453123);
+    }
+
+    float perlinNoise(float3 p)
+    {
+        float3 i = floor(p);
+        float3 f = frac(p);
+        float3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+        return lerp(
+            lerp(
+                lerp(dot(hash3(i + float3(0,0,0)), f - float3(0,0,0)),
+                     dot(hash3(i + float3(1,0,0)), f - float3(1,0,0)), u.x),
+                lerp(dot(hash3(i + float3(0,1,0)), f - float3(0,1,0)),
+                     dot(hash3(i + float3(1,1,0)), f - float3(1,1,0)), u.x), u.y),
+            lerp(
+                lerp(dot(hash3(i + float3(0,0,1)), f - float3(0,0,1)),
+                     dot(hash3(i + float3(1,0,1)), f - float3(1,0,1)), u.x),
+                lerp(dot(hash3(i + float3(0,1,1)), f - float3(0,1,1)),
+                     dot(hash3(i + float3(1,1,1)), f - float3(1,1,1)), u.x), u.y),
+            u.z
+        ) * 0.5 + 0.5;
+    }
+
+    float fbm(float3 p, int iter)
+    {
+        float value = 0.0;
+        float amplitude = 0.5;
+        float frequency = 1.0;
+        for (int i = 0; i < iter; i++)
+        {
+            value += amplitude * perlinNoise(p * frequency);
+            frequency *= 2.0;
+            amplitude *= 0.5;
+        }
+        return value;
+    }
+
+    float compute(float2 uv, float time, float scale, float speed, int iter)
+    {
+        float3 p = float3(uv * scale + float2(0.0, time * speed), 0.0);
+        float col = fbm(p, iter);
+        col = pow(saturate(col), 0.4545);
+        return col;
+    }
+}
+
+MS_PerlinNoiseFBM_Inst;
+return MS_PerlinNoiseFBM_Inst.compute(UV, Time, Scale, Speed, Iter);
 ```
 
 ---
 
-## Struct-Based Organization
+## Struct-Based Organization (标准格式)
 
-For complex algorithms with multiple functions, organize using structs:
+对于包含多个函数的复杂算法，统一使用以下 struct 格式：
+
+**命名规范**：
+- 结构体：`MS_{{FunctionName}}`（MS = Material Structure）
+- 实例变量：`MS_{{FunctionName}}_Inst`
+- 主函数：`compute()`
+- 辅助函数：驼峰命名，如 `hash3()`, `perlinNoise()`
 
 ```hlsl
-struct F{{AlgorithmName}}
+struct MS_{{FunctionName}}
 {
-    // Input parameters
-    {{InputType}} {{InputName}};
-
-    // Main computation function
-    static {{ReturnType}} Compute({{Parameters}})
+    // 辅助函数 - 不使用 static
+    {{ReturnType}} {{HelperFunctionName}}({{Parameters}})
     {
         {{Implementation}}
     }
 
-    // Helper functions
-    static {{ReturnType}} HelperFunction({{Parameters}})
+    // 主计算函数 - 统一命名为 compute
+    {{ReturnType}} compute({{Parameters}})
     {
         {{Implementation}}
     }
-};
+}
+
+// 创建实例
+MS_{{FunctionName}}_Inst;
+// 调用并返回
+return MS_{{FunctionName}}_Inst.compute({{Arguments}});
 ```
+
+**关键规则**：
+1. 结构体内部函数不使用 `static` 关键字
+2. 主计算函数统一命名为 `compute`
+3. 结构体命名使用 `MS_` 前缀，实例名使用 `_Inst` 后缀
+4. 辅助函数可以被 `compute` 或其他辅助函数调用
+5. 最后必须返回 `compute` 函数的调用结果
 
 ---
 
@@ -209,6 +331,56 @@ struct F{{AlgorithmName}}
 - Minimize texture samples
 - Prefer vectorized operations
 - Consider moving complex logic to Material Functions for reuse
+
+---
+
+## 格式选择指南
+
+### 使用简单函数格式
+适用于以下场景：
+- 单一计算函数，无辅助函数
+- 代码量少于 10 行
+- 简单的数学运算或颜色计算
+
+**示例**：
+```hlsl
+float3 MS_SimpleColor_compute(float2 UV, float Time)
+{
+    float3 col = 0.5 + 0.5 * cos(Time + UV.xyx + float3(0.0, 2.0, 4.0));
+    return col;
+}
+
+return MS_SimpleColor_compute(UV, Time);
+```
+
+### 使用结构体格式（推荐用于复杂算法）
+适用于以下场景：
+- 需要多个辅助函数
+- 代码量超过 10 行
+- 复杂的噪声、SDF、光线追踪等算法
+- 函数之间需要相互调用
+
+**命名规范**：
+- 结构体：`MS_{{FunctionName}}`
+- 实例：`MS_{{FunctionName}}_Inst`
+- 主函数：`compute()`
+- 辅助函数：驼峰命名，不使用 `static`
+
+**示例结构**：
+```hlsl
+struct MS_AlgorithmName
+{
+    // 辅助函数可以相互调用
+    float helper1(float3 p) { ... }
+    float helper2(float3 p) { ... }
+
+    // 主计算函数
+    float compute(float2 UV, float Time) { ... }
+}
+
+MS_AlgorithmName_Inst;
+return MS_AlgorithmName_Inst.compute(UV, Time);
+```
 
 ---
 

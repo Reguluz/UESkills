@@ -105,32 +105,35 @@ float noise(float2 p) {
 
 ### 预期输出（带结构体封装）
 ```hlsl
-struct FNoiseGenerator
+struct MS_ValueNoise
 {
-    static float Hash(float2 p)
+    float hash(float2 p)
     {
         return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
     }
 
-    static float Noise(float2 p)
+    float noise(float2 p)
     {
         float2 i = floor(p);
         float2 f = frac(p);
         f = f * f * (3.0 - 2.0 * f);
 
-        float a = Hash(i);
-        float b = Hash(i + float2(1.0, 0.0));
-        float c = Hash(i + float2(0.0, 1.0));
-        float d = Hash(i + float2(1.0, 1.0));
+        float a = hash(i);
+        float b = hash(i + float2(1.0, 0.0));
+        float c = hash(i + float2(0.0, 1.0));
+        float d = hash(i + float2(1.0, 1.0));
 
         return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
     }
-};
 
-float ValueNoise(float2 Position)
-{
-    return FNoiseGenerator::Noise(Position);
+    float compute(float2 Position)
+    {
+        return noise(Position);
+    }
 }
+
+MS_ValueNoise_Inst;
+return MS_ValueNoise_Inst.compute(Position);
 ```
 
 ### 验证点
@@ -315,26 +318,34 @@ float map(vec3 p) {
 
 ### 预期输出（带结构体）
 ```hlsl
-struct FSDF
+struct MS_SDFScene
 {
-    static float SDSphere(float3 p, float s)
+    float sdSphere(float3 p, float s)
     {
         return length(p) - s;
     }
 
-    static float SDBox(float3 p, float3 b)
+    float sdBox(float3 p, float3 b)
     {
         float3 q = abs(p) - b;
         return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
     }
 
-    static float Map(float3 p)
+    float map(float3 p)
     {
-        float s = SDSphere(p - float3(0.0, 1.0, 0.0), 1.0);
-        float b = SDBox(p - float3(2.0, 0.5, 0.0), float3(0.5));
+        float s = sdSphere(p - float3(0.0, 1.0, 0.0), 1.0);
+        float b = sdBox(p - float3(2.0, 0.5, 0.0), float3(0.5));
         return min(s, b);
     }
-};
+
+    float compute(float3 Position)
+    {
+        return map(Position);
+    }
+}
+
+MS_SDFScene_Inst;
+return MS_SDFScene_Inst.compute(Position);
 ```
 
 ### 验证点

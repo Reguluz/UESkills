@@ -91,24 +91,30 @@ cp -r ue-material-converter ~/.claude/skills/
 //   - Time (float): 时间参数
 // Output: float3 - RGB颜色
 
-float3 NeonRipples(float2 UV, float Time)
+struct MS_NeonRipples
 {
-    float2 uv = UV * 2.0 - 1.0;
-    float d = length(uv);
-    float3 col = float3(0.0, 0.0, 0.0);
-    
-    for(int i = 0; i < 8; i++) {
-        uv = frac(uv * 1.5) - 0.5;
-        float d = length(uv) * exp(-length(uv0));
+    float3 compute(float2 UV, float Time)
+    {
+        float2 uv = UV * 2.0 - 1.0;
+        float d = length(uv);
         float3 col = float3(0.0, 0.0, 0.0);
-        d = sin(d * 8.0 + Time) / 8.0;
-        d = abs(d);
-        d = pow(0.01 / d, 1.2);
-        col += float3(0.0, 0.0, 0.0) * d;
+
+        for(int i = 0; i < 8; i++) {
+            uv = frac(uv * 1.5) - 0.5;
+            float d = length(uv) * exp(-length(uv0));
+            float3 col = float3(0.0, 0.0, 0.0);
+            d = sin(d * 8.0 + Time) / 8.0;
+            d = abs(d);
+            d = pow(0.01 / d, 1.2);
+            col += float3(0.0, 0.0, 0.0) * d;
+        }
+
+        return col;
     }
-    
-    return col;
 }
+
+MS_NeonRipples_Inst;
+return MS_NeonRipples_Inst.compute(UV, Time);
 ```
 
 5. 在UE中创建Custom节点，设置输入引脚
@@ -128,12 +134,50 @@ float3 NeonRipples(float2 UV, float Time)
 ```hlsl
 // Custom节点: PerlinNoise
 // Inputs:
-//   - Position (float2): 采样位置
+//   - UV (float2): 采样位置
 //   - Scale (float): 缩放系数
 //   - Octaves (int): 叠加层数
-// Output: float - 噪声值 [-1,1]
+// Output: float - 噪声值 [0,1]
 
-// ... 实现代码
+struct MS_PerlinNoise
+{
+    float2 hash(float2 p)
+    {
+        p = float2(dot(p, float2(127.1, 311.7)),
+                   dot(p, float2(269.5, 183.3)));
+        return -1.0 + 2.0 * frac(sin(p) * 43758.5453123);
+    }
+
+    float noise(float2 p)
+    {
+        float2 i = floor(p);
+        float2 f = frac(p);
+        float2 u = f * f * (3.0 - 2.0 * f);
+
+        return lerp(lerp(dot(hash(i + float2(0.0, 0.0)), f - float2(0.0, 0.0)),
+                         dot(hash(i + float2(1.0, 0.0)), f - float2(1.0, 0.0)), u.x),
+                    lerp(dot(hash(i + float2(0.0, 1.0)), f - float2(0.0, 1.0)),
+                         dot(hash(i + float2(1.0, 1.0)), f - float2(1.0, 1.0)), u.x), u.y);
+    }
+
+    float compute(float2 UV, float Scale, int Octaves)
+    {
+        float value = 0.0;
+        float amplitude = 0.5;
+        float frequency = 1.0;
+
+        for(int i = 0; i < Octaves; i++) {
+            value += amplitude * noise(UV * Scale * frequency);
+            frequency *= 2.0;
+            amplitude *= 0.5;
+        }
+
+        return value * 0.5 + 0.5;
+    }
+}
+
+MS_PerlinNoise_Inst;
+return MS_PerlinNoise_Inst.compute(UV, Scale, Octaves);
 ```
 
 ## 常见问题解决
