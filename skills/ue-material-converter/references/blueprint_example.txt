@@ -1,28 +1,63 @@
 // UE蓝图材质节点示例
 
-// 原始蓝图结构（复制成代码）：
+// ============================================================
+// 示例1：蓝图复制文本格式（Expression-Only 格式）
+// ============================================================
+
+// 正确的蓝图复制文本格式 — 仅使用 Expression= 引用建立连接：
 /*
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_0"
-   NodeGuid=1234567890ABCDEF1234567890ABCDEF
-   Material=Material'/Engine/Transient.Material_0'
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ConstA"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant2Vector Name="MaterialExpressionConstant2Vector_0"
+   End Object
+   Begin Object Name="MaterialExpressionConstant2Vector_0"
+      R=2.000000
+      G=3.000000
+      MaterialExpressionEditorX=32
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialExpressionConstant2Vector_0'"
+   NodePosX=32
+   NodePosY=32
 End Object
 
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_1"
-   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
-      A=(Expression=MaterialExpressionConstant2DBase'"MaterialGraphNode_2.MaterialExpressionConstant2D_0"')
-      B=(Expression=MaterialExpressionConstant2DBase'"MaterialGraphNode_3.MaterialExpressionConstant2D_1"')
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ConstB"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant2Vector Name="MaterialExpressionConstant2Vector_1"
    End Object
-   MaterialExpression=MaterialExpressionMultiply'"MaterialExpressionMultiply_0"'
+   Begin Object Name="MaterialExpressionConstant2Vector_1"
+      R=4.000000
+      G=5.000000
+      MaterialExpressionEditorX=32
+      MaterialExpressionEditorY=128
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialExpressionConstant2Vector_1'"
+   NodePosX=32
+   NodePosY=128
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Multiply"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialGraphNode_ConstA.MaterialExpressionConstant2Vector_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant2Vector'MaterialGraphNode_ConstB.MaterialExpressionConstant2Vector_1'")
+      MaterialExpressionEditorX=256
+      MaterialExpressionEditorY=64
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
    NodePosX=256
-   NodePosY=48
+   NodePosY=64
 End Object
 */
 
+// 节点连接说明：
+// - ConstA (2.0, 3.0) → Multiply.A
+// - ConstB (4.0, 5.0) → Multiply.B
+// - 粘贴后自动连接，结果为逐分量乘积 (8.0, 15.0)
+
 // 分析蓝图节点连接：
-// - 节点0: 输出节点
-// - 节点1: Multiply运算节点，接收两个float2输入
-// - 节点2: Constant2D节点（第一个输入）
-// - 节点3: Constant2D节点（第二个输入）
+// - MaterialGraphNode_ConstA: Constant2Vector 节点（第一个输入）
+// - MaterialGraphNode_ConstB: Constant2Vector 节点（第二个输入）
+// - MaterialGraphNode_Multiply: Multiply 运算节点，通过 Expression= 引用两个常量节点
 
 // 转换为HLSL函数：
 /*
@@ -38,14 +73,62 @@ float2 MultiplyVector2D(float2 A, float2 B)
 }
 */
 
-// 更复杂的蓝图示例（带纹理采样）：
+// ============================================================
+// 示例2：带纹理采样的蓝图复制文本
+// ============================================================
+
+// 蓝图逻辑：
+// 1. TextureCoordinate 节点 → UV
+// 2. TextureSample(UV) → 采样结果
+// 3. Multiply 采样结果 × 2.0 → 增亮输出
+
 /*
-蓝图逻辑：
-1. TextureCoordinate节点 → UV
-2. TextureObject节点 → Tex
-3. TextureSample(UV, Tex) → 采样结果
-4. Multiply采样结果 × Constant3RGB(2.0) → 输出
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_TexCoord"
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureCoordinate Name="MaterialExpressionTextureCoordinate_0"
+   End Object
+   Begin Object Name="MaterialExpressionTextureCoordinate_0"
+      CoordinateIndex=0
+      MaterialExpressionEditorX=32
+      MaterialExpressionEditorY=64
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialExpressionTextureCoordinate_0'"
+   NodePosX=32
+   NodePosY=64
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_TexSample"
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSample Name="MaterialExpressionTextureSample_0"
+   End Object
+   Begin Object Name="MaterialExpressionTextureSample_0"
+      Coordinates=(Expression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialGraphNode_TexCoord.MaterialExpressionTextureCoordinate_0'")
+      MaterialExpressionEditorX=256
+      MaterialExpressionEditorY=64
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionTextureSample'MaterialExpressionTextureSample_0'"
+   NodePosX=256
+   NodePosY=64
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Brighten"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureSample'MaterialGraphNode_TexSample.MaterialExpressionTextureSample_0'")
+      ConstB=2.000000
+      MaterialExpressionEditorX=480
+      MaterialExpressionEditorY=64
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
+   NodePosX=480
+   NodePosY=64
+End Object
 */
+
+// 节点连接说明：
+// - TexCoord → TextureSample.Coordinates
+// - TextureSample → Multiply.A
+// - Multiply.ConstB = 2.0（内联常量，无需额外节点）
+// - 粘贴后自动连接
 
 // 转换为HLSL：
 /*
@@ -66,3 +149,18 @@ float3 TextureSampleBrightened(float2 UV, Texture2D Texture)
 // 2. 创建TextureSampler参数节点并连接
 // 或者使用材质自带的TextureObject节点类型
 */
+
+// ============================================================
+// 蓝图复制文本格式要点
+// ============================================================
+//
+// 1. 节点连接仅通过 Expression= 引用：
+//    A=(Expression="/Script/Engine.ExprType'OuterName.InnerName'")
+//
+// 2. 禁止使用 CustomProperties Pin 块（PinId/LinkedTo/PersistentGuid）
+//
+// 3. 禁止生成 MaterialExpressionComment（Comment框，会导致UE崩溃）
+//
+// 4. 对于双输入节点，可使用 ConstA/ConstB 替代常量节点连接
+//
+// 5. 位置信息用 NodePosX/NodePosY 和 MaterialExpressionEditorX/Y

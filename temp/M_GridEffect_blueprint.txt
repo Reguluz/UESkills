@@ -1,0 +1,357 @@
+===============================================================================
+UE 材质蓝图复制文本
+文件名: M_GridEffect
+描述: 动态网格效果 - 纯蓝图实现（无Custom节点）
+使用方法: 创建材质，设置 Domain=UserInterface, BlendMode=Additive，粘贴后自动连接
+注意: 需要先创建材质函数 MF_GridEffect_Random2D 并保存到项目中
+===============================================================================
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_TexCoord"
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureCoordinate Name="MaterialExpressionTextureCoordinate_0"
+   End Object
+   Begin Object Name="MaterialExpressionTextureCoordinate_0"
+      CoordinateIndex=0
+      MaterialExpressionEditorX=32
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialExpressionTextureCoordinate_0'"
+   NodePosX=32
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_RealTime"
+   Begin Object Class=/Script/Engine.MaterialExpressionRealTime Name="MaterialExpressionRealTime_0"
+   End Object
+   Begin Object Name="MaterialExpressionRealTime_0"
+      MaterialExpressionEditorX=32
+      MaterialExpressionEditorY=192
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionRealTime'MaterialExpressionRealTime_0'"
+   NodePosX=32
+   NodePosY=192
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul_GridScale"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialGraphNode_TexCoord.MaterialExpressionTextureCoordinate_0'")
+      ConstB=10.000000
+      MaterialExpressionEditorX=224
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
+   NodePosX=224
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Floor"
+   Begin Object Class=/Script/Engine.MaterialExpressionFloor Name="MaterialExpressionFloor_0"
+   End Object
+   Begin Object Name="MaterialExpressionFloor_0"
+      Input=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_GridScale.MaterialExpressionMultiply_0'")
+      MaterialExpressionEditorX=416
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionFloor'MaterialExpressionFloor_0'"
+   NodePosX=416
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Fract"
+   Begin Object Class=/Script/Engine.MaterialExpressionFrac Name="MaterialExpressionFrac_0"
+   End Object
+   Begin Object Name="MaterialExpressionFrac_0"
+      Input=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_GridScale.MaterialExpressionMultiply_0'")
+      MaterialExpressionEditorX=416
+      MaterialExpressionEditorY=112
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionFrac'MaterialExpressionFrac_0'"
+   NodePosX=416
+   NodePosY=112
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const_Neg05"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_0"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_0"
+      R=-0.500000
+      MaterialExpressionEditorX=416
+      MaterialExpressionEditorY=192
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_0'"
+   NodePosX=416
+   NodePosY=192
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Add_GrOffset"
+   Begin Object Class=/Script/Engine.MaterialExpressionAdd Name="MaterialExpressionAdd_0"
+   End Object
+   Begin Object Name="MaterialExpressionAdd_0"
+      A=(Expression="/Script/Engine.MaterialExpressionFrac'MaterialGraphNode_Fract.MaterialExpressionFrac_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const_Neg05.MaterialExpressionConstant_0'")
+      MaterialExpressionEditorX=608
+      MaterialExpressionEditorY=112
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionAdd'MaterialExpressionAdd_0'"
+   NodePosX=608
+   NodePosY=112
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Call_Random"
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_0"
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_0"
+      MaterialFunction=/Script/Engine.MaterialFunction"/Game/Materials/Functions/MF_GridEffect_Random2D"
+      FunctionInputs(0)=(ExpressionInput=(Expression="/Script/Engine.MaterialExpressionFloor'MaterialGraphNode_Floor.MaterialExpressionFloor_0'"),Input=(InputName="P"))
+      MaterialExpressionEditorX=608
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialExpressionMaterialFunctionCall_0'"
+   NodePosX=608
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const_06"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_1"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_1"
+      R=0.600000
+      MaterialExpressionEditorX=608
+      MaterialExpressionEditorY=192
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_1'"
+   NodePosX=608
+   NodePosY=192
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_If_Main"
+   Begin Object Class=/Script/Engine.MaterialExpressionIf Name="MaterialExpressionIf_0"
+   End Object
+   Begin Object Name="MaterialExpressionIf_0"
+      A=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const_06.MaterialExpressionConstant_1'")
+      MaterialExpressionEditorX=848
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionIf'MaterialExpressionIf_0'"
+   NodePosX=848
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul_TimeScale"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_1"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_1"
+      A=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionRealTime'MaterialGraphNode_RealTime.MaterialExpressionRealTime_0'")
+      MaterialExpressionEditorX=1072
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_1'"
+   NodePosX=1072
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Add_Phase"
+   Begin Object Class=/Script/Engine.MaterialExpressionAdd Name="MaterialExpressionAdd_1"
+   End Object
+   Begin Object Name="MaterialExpressionAdd_1"
+      A=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_TimeScale.MaterialExpressionMultiply_1'")
+      B=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      MaterialExpressionEditorX=1264
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionAdd'MaterialExpressionAdd_1'"
+   NodePosX=1264
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Sin_Osc"
+   Begin Object Class=/Script/Engine.MaterialExpressionSine Name="MaterialExpressionSine_0"
+   End Object
+   Begin Object Name="MaterialExpressionSine_0"
+      Input=(Expression="/Script/Engine.MaterialExpressionAdd'MaterialGraphNode_Add_Phase.MaterialExpressionAdd_1'")
+      MaterialExpressionEditorX=1456
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionSine'MaterialExpressionSine_0'"
+   NodePosX=1456
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const_075"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_2"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_2"
+      R=0.750000
+      MaterialExpressionEditorX=1264
+      MaterialExpressionEditorY=128
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_2'"
+   NodePosX=1264
+   NodePosY=128
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul_ScaleAmp"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_2"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_2"
+      A=(Expression="/Script/Engine.MaterialExpressionSine'MaterialGraphNode_Sin_Osc.MaterialExpressionSine_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const_075.MaterialExpressionConstant_2'")
+      MaterialExpressionEditorX=1648
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_2'"
+   NodePosX=1648
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul_SizeY"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_3"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_3"
+      A=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_ScaleAmp.MaterialExpressionMultiply_2'")
+      B=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      MaterialExpressionEditorX=1840
+      MaterialExpressionEditorY=96
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_3'"
+   NodePosX=1840
+   NodePosY=96
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Append_Size"
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_0"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_0"
+      A=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_ScaleAmp.MaterialExpressionMultiply_2'")
+      B=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_SizeY.MaterialExpressionMultiply_3'")
+      MaterialExpressionEditorX=2032
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionAppendVector'MaterialExpressionAppendVector_0'"
+   NodePosX=2032
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const_08"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_3"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_3"
+      R=0.800000
+      MaterialExpressionEditorX=1840
+      MaterialExpressionEditorY=224
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_3'"
+   NodePosX=1840
+   NodePosY=224
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const_09"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_4"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_4"
+      R=0.900000
+      MaterialExpressionEditorX=1840
+      MaterialExpressionEditorY=304
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_4'"
+   NodePosX=1840
+   NodePosY=304
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_If_SizeMod1"
+   Begin Object Class=/Script/Engine.MaterialExpressionIf Name="MaterialExpressionIf_1"
+   End Object
+   Begin Object Name="MaterialExpressionIf_1"
+      A=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const_08.MaterialExpressionConstant_3'")
+      AGreaterThanB=(Expression="/Script/Engine.MaterialExpressionAppendVector'MaterialGraphNode_Append_Size.MaterialExpressionAppendVector_0'")
+      ALessThanB=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const_09.MaterialExpressionConstant_4'")
+      MaterialExpressionEditorX=2224
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionIf'MaterialExpressionIf_1'"
+   NodePosX=2224
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Mul_WidthMod"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_4"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_4"
+      A=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_ScaleAmp.MaterialExpressionMultiply_2'")
+      B=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      MaterialExpressionEditorX=2224
+      MaterialExpressionEditorY=224
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_4'"
+   NodePosX=2224
+   NodePosY=224
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Append_WidthMod"
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_1"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_1"
+      A=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_WidthMod.MaterialExpressionMultiply_4'")
+      B=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_SizeY.MaterialExpressionMultiply_3'")
+      MaterialExpressionEditorX=2416
+      MaterialExpressionEditorY=224
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionAppendVector'MaterialExpressionAppendVector_1'"
+   NodePosX=2416
+   NodePosY=224
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_If_SizeMod2"
+   Begin Object Class=/Script/Engine.MaterialExpressionIf Name="MaterialExpressionIf_2"
+   End Object
+   Begin Object Name="MaterialExpressionIf_2"
+      A=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'MaterialGraphNode_Call_Random.MaterialExpressionMaterialFunctionCall_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'MaterialGraphNode_Const_09.MaterialExpressionConstant_4'")
+      AGreaterThanB=(Expression="/Script/Engine.MaterialExpressionIf'MaterialGraphNode_If_SizeMod1.MaterialExpressionIf_1'")
+      ALessThanB=(Expression="/Script/Engine.MaterialExpressionAppendVector'MaterialGraphNode_Append_WidthMod.MaterialExpressionAppendVector_1'")
+      MaterialExpressionEditorX=2608
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionIf'MaterialExpressionIf_2'"
+   NodePosX=2608
+   NodePosY=32
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Append_SizeMod2"
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_2"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_2"
+      A=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_SizeY.MaterialExpressionMultiply_3'")
+      B=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Mul_ScaleAmp.MaterialExpressionMultiply_2'")
+      MaterialExpressionEditorX=2800
+      MaterialExpressionEditorY=224
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionAppendVector'MaterialExpressionAppendVector_2'"
+   NodePosX=2800
+   NodePosY=224
+End Object
+
+===============================================================================
+材质设置:
+- Material Domain: User Interface
+- Blend Mode: Additive
+
+节点连接说明（粘贴后自动连接）:
+TexCoord → Multiply(×10, GridScale)
+Multiply(GridScale) → Floor(整数部分, 网格ID)
+Multiply(GridScale) → Frac(小数部分, 网格内坐标)
+Frac + Constant(-0.5) → Add(中心偏移)
+Floor → MF_Random2D(P) → 随机值
+
+随机值 → If(A) vs Constant(0.6)(B): 主开关
+随机值 × RealTime → Multiply(TimeScale) + 随机值 → Add(Phase) → Sin → ×0.75 → ScaleAmp
+ScaleAmp × 随机值 → SizeY
+Append(ScaleAmp, SizeY) → 基础尺寸
+
+条件分支链: If(随机值 vs 0.8) → If(随机值 vs 0.9) → 最终尺寸变体
+If(Main, Output) → Emissive Color
+===============================================================================

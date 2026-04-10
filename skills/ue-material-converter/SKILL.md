@@ -118,21 +118,69 @@ When users provide UE material blueprint text (copied as code), analyze the node
 输出：FogColor (float3)
 ```
 
-**对应蓝图复制文本**：
+**对应蓝图复制文本**（Expression-Only 格式，所有引用节点自包含）：
 ```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThinColor"
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_0"
+      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
+      ParameterName="FogThinColor"
+      Group="Color"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=780
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
+   NodePosX=2176
+   NodePosY=780
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThickColor"
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_1"
+      DefaultValue=(R=0.005605,G=0.090842,B=0.250158,A=1.000000)
+      ParameterName="FogThickColor"
+      Group="Color"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=1056
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_1'"
+   NodePosX=2176
+   NodePosY=1056
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Density"
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_0"
+      DefaultValue=0.500000
+      ParameterName="FogDensity"
+      Group="Fog"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=920
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionScalarParameter'MaterialExpressionScalarParameter_0'"
+   NodePosX=2176
+   NodePosY=920
+   bCanRenameNode=True
+End Object
+
 Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
    Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
    End Object
    Begin Object Name="MaterialExpressionLinearInterpolate_0"
-      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'")
-      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'")
-      Alpha=(Expression="/Script/Engine.MaterialExpressionReroute'MaterialGraphNode_Knot_0.MaterialExpressionReroute_0'")
+      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      Alpha=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
       MaterialExpressionEditorX=2688
-      MaterialExpressionEditorY=1024
+      MaterialExpressionEditorY=920
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
    NodePosX=2688
-   NodePosY=1024
+   NodePosY=920
 End Object
 ```
 
@@ -203,6 +251,207 @@ return MS_PerlinNoiseFBM_Inst.compute(UV, Time, Scale, Speed, Iter);
 - ✓ 参数可在外部调整
 - ✓ 无需维护 HLSL 代码
 ```
+
+### 蓝图复制文本格式规范
+
+当生成蓝图复制文本时，**必须严格遵循以下格式规范**，否则粘贴到 UE 材质编辑器中会失败或导致崩溃。
+
+#### 禁止规则
+
+1. **禁止生成 `MaterialExpressionComment`（Comment 框）** — AI 无法生成有效的 Comment 框序列化数据，粘贴会导致 UE 材质编辑器崩溃
+2. **禁止生成 `CustomProperties Pin` 块** — 其中的 PinId、PersistentGuid、LinkedTo 等字段由 UE 编辑器内部自动管理，AI 无法生成合法的 GUID 值，包含这些字段会导致连接失败
+3. **禁止使用假 GUID** — 不要使用 `TEXCOORD_PIN_OUT`、`MUL1_A_PERSIST` 等非法标识符代替 GUID
+
+#### 节点连接机制（Expression-Only 格式）
+
+节点之间的连接**仅通过** MaterialExpression 内部对象的输入属性 `Expression=` 引用来建立：
+
+```
+A=(Expression="/Script/Engine.MaterialExpressionType'OuterNodeName.InnerExpressionName'")
+```
+
+- `OuterNodeName` = MaterialGraphNode 的 `Name` 属性
+- `InnerExpressionName` = 内部 MaterialExpression 对象的 `Name` 属性
+- UE 粘贴时会根据 Expression 引用路径自动重建所有 Pin 连接
+
+#### 标准节点模板
+
+**单输入节点**（如 Floor、Frac、Sin）：
+```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Floor"
+   Begin Object Class=/Script/Engine.MaterialExpressionFloor Name="MaterialExpressionFloor_0"
+   End Object
+   Begin Object Name="MaterialExpressionFloor_0"
+      Input=(Expression="/Script/Engine.MaterialExpressionMultiply'MaterialGraphNode_Multiply.MaterialExpressionMultiply_0'")
+      MaterialExpressionEditorX=400
+      MaterialExpressionEditorY=200
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionFloor'MaterialExpressionFloor_0'"
+   NodePosX=400
+   NodePosY=200
+End Object
+```
+
+**双输入节点**（如 Add、Multiply、Lerp）：
+```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Multiply"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_0"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureCoordinate'MaterialGraphNode_TexCoord.MaterialExpressionTextureCoordinate_0'")
+      ConstB=10.000000
+      MaterialExpressionEditorX=224
+      MaterialExpressionEditorY=32
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionMultiply'MaterialExpressionMultiply_0'"
+   NodePosX=224
+   NodePosY=32
+End Object
+```
+
+**常量节点**（无输入连接）：
+```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Const1"
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_0"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_0"
+      R=0.500000
+      MaterialExpressionEditorX=100
+      MaterialExpressionEditorY=300
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionConstant'MaterialExpressionConstant_0'"
+   NodePosX=100
+   NodePosY=300
+End Object
+```
+
+**VectorParameter 节点**：
+```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Color"
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_0"
+      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
+      ParameterName="MyColor"
+      Group="Color"
+      MaterialExpressionEditorX=200
+      MaterialExpressionEditorY=780
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
+   NodePosX=200
+   NodePosY=780
+   bCanRenameNode=True
+End Object
+```
+
+#### 常用节点 Expression 输入属性映射
+
+| 节点类型 | 输入属性名 | 说明 |
+|---------|-----------|------|
+| `MaterialExpressionAdd` | `A=`, `B=` | 加法 A+B |
+| `MaterialExpressionMultiply` | `A=`, `B=` | 乘法 A*B，可用 `ConstA`/`ConstB` 替代常量输入 |
+| `MaterialExpressionSubtract` | `A=`, `B=` | 减法 A-B |
+| `MaterialExpressionDivide` | `A=`, `B=` | 除法 A/B |
+| `MaterialExpressionLinearInterpolate` | `A=`, `B=`, `Alpha=` | 线性插值 |
+| `MaterialExpressionDotProduct` | `A=`, `B=` | 点积 |
+| `MaterialExpressionCrossProduct` | `A=`, `B=` | 叉积 |
+| `MaterialExpressionFloor` | `Input=` | 向下取整 |
+| `MaterialExpressionFraction` | `Input=` | 小数部分 (frac) |
+| `MaterialExpressionSine` | `Input=` | 正弦（注意 UE 默认周期为 0-1 而非 0-2π） |
+| `MaterialExpressionCosine` | `Input=` | 余弦 |
+| `MaterialExpressionAbs` | `Input=` | 绝对值 |
+| `MaterialExpressionSaturate` | `Input=` | Clamp 到 [0,1] |
+| `MaterialExpressionOneMinus` | `Input=` | 1-X |
+| `MaterialExpressionClamp` | `Input=`, `Min=`, `Max=` | 范围限制 |
+| `MaterialExpressionIf` | `A=`, `B=`, `AGreaterThanB=`, `AEqualsB=`, `ALessThanB=` | 条件分支 |
+| `MaterialExpressionStaticSwitchParameter` | `A=`, `B=` | 静态开关，A=True 分支，B=False 分支 |
+| `MaterialExpressionAppendVector` | `A=`, `B=` | 向量拼接 |
+| `MaterialExpressionComponentMask` | `Input=` | 分量掩码，配合 `R=True`/`G=True` 等 |
+| `MaterialExpressionTextureCoordinate` | 无输入 | UV 坐标，配合 `CoordinateIndex=` |
+| `MaterialExpressionConstant` | 无输入 | 标量常量，值设置在 `R=` |
+| `MaterialExpressionConstant2Vector` | 无输入 | 二维常量，`R=`, `G=` |
+| `MaterialExpressionConstant3Vector` | 无输入 | 三维常量，`Constant=(R=,G=,B=)` |
+| `MaterialExpressionScalarParameter` | 无输入 | 标量参数，`ParameterName=`, `DefaultValue=` |
+| `MaterialExpressionVectorParameter` | 无输入 | 向量参数，`ParameterName=`, `DefaultValue=(R=,G=,B=,A=)` |
+| `MaterialExpressionCustom` | `Code="..."` | Custom 节点，HLSL 代码 |
+| `MaterialExpressionFunctionInput` | 无输入 | 材质函数输入，`InputName=`, `InputType=` |
+| `MaterialExpressionFunctionOutput` | `A=` | 材质函数输出，`OutputName=` |
+
+#### 布局指南
+
+- 节点从左到右排列，X 坐标递增（间距建议 160-200）
+- 同层节点 Y 坐标对齐，不同层 Y 偏移 64-80
+- 输入节点（TexCoord、Constant、Parameter）放在最左侧
+- 输出节点（FunctionOutput、Material 属性）放在最右侧
+
+#### 完整示例：简单 Lerp 连接
+
+```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThinColor"
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_0"
+      DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
+      ParameterName="FogThinColor"
+      Group="Color"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=780
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
+   NodePosX=2176
+   NodePosY=780
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThickColor"
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_1"
+      DefaultValue=(R=0.005605,G=0.090842,B=0.250158,A=1.000000)
+      ParameterName="FogThickColor"
+      Group="Color"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=1056
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_1'"
+   NodePosX=2176
+   NodePosY=1056
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Density"
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_0"
+      DefaultValue=0.500000
+      ParameterName="FogDensity"
+      Group="Fog"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=920
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionScalarParameter'MaterialExpressionScalarParameter_0'"
+   NodePosX=2176
+   NodePosY=920
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
+   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
+   End Object
+   Begin Object Name="MaterialExpressionLinearInterpolate_0"
+      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      Alpha=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
+      MaterialExpressionEditorX=2688
+      MaterialExpressionEditorY=920
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
+   NodePosX=2688
+   NodePosY=920
+End Object
+```
+
+粘贴此文本到 UE 材质编辑器后，四个节点会自动出现并正确连接：ThinColor → Lerp.A，ThickColor → Lerp.B，Density → Lerp.Alpha。
 
 ---
 

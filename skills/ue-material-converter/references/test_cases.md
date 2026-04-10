@@ -392,73 +392,17 @@ return MS_SDFScene_Inst.compute(Position);
 输出：FogColor (float3)
 ```
 
-**蓝图复制文本**：
+**蓝图复制文本**（Expression-Only 格式，粘贴后自动连接）：
 ```
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_19"
-   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_1"
-   End Object
-   Begin Object Name="MaterialExpressionLinearInterpolate_1"
-      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_83.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_84.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      Alpha=(Expression="/Script/Engine.MaterialExpressionReroute'MaterialGraphNode_Knot_2.MaterialExpressionReroute_3'")
-      MaterialExpressionEditorX=2688
-      MaterialExpressionEditorY=1024
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_1'"
-   NodePosX=2688
-   NodePosY=1024
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_57"
-   Begin Object Class=/Script/Engine.MaterialExpressionCurveAtlasRowParameter Name="MaterialExpressionCurveAtlasRowParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionCurveAtlasRowParameter_0"
-      Curve="/Script/Engine.CurveLinearColor'/Game/Textures/CLC_MistyFog.CLC_MistyFog'"
-      Atlas="/Script/Engine.CurveLinearColorAtlas'/Game/Textures/CCA_Fog.CCA_Fog'"
-      InputTime=(Expression="/Script/Engine.MaterialExpressionComponentMask'MaterialGraphNode_58.MaterialExpressionComponentMask_8'")
-      ParameterName="FogColorGradient"
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionCurveAtlasRowParameter'MaterialExpressionCurveAtlasRowParameter_0'"
-   NodePosX=2688
-   NodePosY=816
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_58"
-   Begin Object Class=/Script/Engine.MaterialExpressionComponentMask Name="MaterialExpressionComponentMask_8"
-   End Object
-   Begin Object Name="MaterialExpressionComponentMask_8"
-      Input=(Expression="/Script/Engine.MaterialExpressionReroute'MaterialGraphNode_Knot_2.MaterialExpressionReroute_3'")
-      R=True
-      MaterialExpressionEditorX=2528
-      MaterialExpressionEditorY=816
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionComponentMask'MaterialExpressionComponentMask_8'"
-   NodePosX=2528
-   NodePosY=816
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_59"
-   Begin Object Class=/Script/Engine.MaterialExpressionStaticSwitchParameter Name="MaterialExpressionStaticSwitchParameter_0"
-   End Object
-   Begin Object Name="MaterialExpressionStaticSwitchParameter_0"
-      A=(Expression="/Script/Engine.MaterialExpressionCurveAtlasRowParameter'MaterialGraphNode_57.MaterialExpressionCurveAtlasRowParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
-      B=(Expression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialGraphNode_19.MaterialExpressionLinearInterpolate_1'")
-      ParameterName="GradientColor"
-   End Object
-   MaterialExpression="/Script/Engine.MaterialExpressionStaticSwitchParameter'MaterialExpressionStaticSwitchParameter_0'"
-   NodePosX=2912
-   NodePosY=976
-   bCanRenameNode=True
-End Object
-
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_83"
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThinColor"
    Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0"
    End Object
    Begin Object Name="MaterialExpressionVectorParameter_0"
       DefaultValue=(R=0.846873,G=0.887923,B=1.000000,A=1.000000)
       ParameterName="FogThinColor"
       Group="Color"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=780
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_0'"
    NodePosX=2176
@@ -466,17 +410,97 @@ Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_83
    bCanRenameNode=True
 End Object
 
-Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_84"
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ThickColor"
    Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1"
    End Object
    Begin Object Name="MaterialExpressionVectorParameter_1"
       DefaultValue=(R=0.005605,G=0.090842,B=0.250158,A=1.000000)
       ParameterName="FogThickColor"
       Group="Color"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=1056
    End Object
    MaterialExpression="/Script/Engine.MaterialExpressionVectorParameter'MaterialExpressionVectorParameter_1'"
-   NodePosX=2160
+   NodePosX=2176
    NodePosY=1056
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Density"
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_0"
+      DefaultValue=0.500000
+      ParameterName="FogDensity"
+      Group="Fog"
+      MaterialExpressionEditorX=2176
+      MaterialExpressionEditorY=920
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionScalarParameter'MaterialExpressionScalarParameter_0'"
+   NodePosX=2176
+   NodePosY=920
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_ComponentMask"
+   Begin Object Class=/Script/Engine.MaterialExpressionComponentMask Name="MaterialExpressionComponentMask_0"
+   End Object
+   Begin Object Name="MaterialExpressionComponentMask_0"
+      Input=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
+      R=True
+      MaterialExpressionEditorX=2528
+      MaterialExpressionEditorY=816
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionComponentMask'MaterialExpressionComponentMask_0'"
+   NodePosX=2528
+   NodePosY=816
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
+   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
+   End Object
+   Begin Object Name="MaterialExpressionLinearInterpolate_0"
+      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      Alpha=(Expression="/Script/Engine.MaterialExpressionScalarParameter'MaterialGraphNode_Density.MaterialExpressionScalarParameter_0'")
+      MaterialExpressionEditorX=2688
+      MaterialExpressionEditorY=1024
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
+   NodePosX=2688
+   NodePosY=1024
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_CurveAtlas"
+   Begin Object Class=/Script/Engine.MaterialExpressionCurveAtlasRowParameter Name="MaterialExpressionCurveAtlasRowParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionCurveAtlasRowParameter_0"
+      Curve="/Script/Engine.CurveLinearColor'/Game/Textures/CLC_MistyFog.CLC_MistyFog'"
+      Atlas="/Script/Engine.CurveLinearColorAtlas'/Game/Textures/CCA_Fog.CCA_Fog'"
+      InputTime=(Expression="/Script/Engine.MaterialExpressionComponentMask'MaterialGraphNode_ComponentMask.MaterialExpressionComponentMask_0'")
+      ParameterName="FogColorGradient"
+      MaterialExpressionEditorX=2688
+      MaterialExpressionEditorY=816
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionCurveAtlasRowParameter'MaterialExpressionCurveAtlasRowParameter_0'"
+   NodePosX=2688
+   NodePosY=816
+   bCanRenameNode=True
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Switch"
+   Begin Object Class=/Script/Engine.MaterialExpressionStaticSwitchParameter Name="MaterialExpressionStaticSwitchParameter_0"
+   End Object
+   Begin Object Name="MaterialExpressionStaticSwitchParameter_0"
+      A=(Expression="/Script/Engine.MaterialExpressionCurveAtlasRowParameter'MaterialGraphNode_CurveAtlas.MaterialExpressionCurveAtlasRowParameter_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialGraphNode_Lerp.MaterialExpressionLinearInterpolate_0'")
+      ParameterName="GradientColor"
+      MaterialExpressionEditorX=2912
+      MaterialExpressionEditorY=976
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionStaticSwitchParameter'MaterialExpressionStaticSwitchParameter_0'"
+   NodePosX=2912
+   NodePosY=976
    bCanRenameNode=True
 End Object
 ```
@@ -499,9 +523,13 @@ graph TD
 ### 验证点
 - [ ] 使用蓝图节点实现，无需 HLSL
 - [ ] StaticSwitch 正确切换两种模式
-- [ ] Lerp 节点参数连接正确
+- [ ] Lerp 节点参数连接正确（A=ThinColor, B=ThickColor, Alpha=Density）
 - [ ] VectorParameter 默认值正确
 - [ ] CurveAtlas 采样正确
+- [ ] **蓝图格式合规**：使用 Expression-only 格式，无 CustomProperties Pin 块
+- [ ] **无 Comment 框**：不包含 MaterialExpressionComment 节点
+- [ ] **所有 Expression 引用可达**：每个 Expression= 引用的目标节点都在文本中定义
+- [ ] **粘贴连接正确**：粘贴后节点自动连接，无需手动操作
 
 ### 优势说明
 - ✅ 可视化节点连接，易于理解
