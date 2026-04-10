@@ -1,0 +1,68 @@
+// UE蓝图材质节点示例
+
+// 原始蓝图结构（复制成代码）：
+/*
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_0"
+   NodeGuid=1234567890ABCDEF1234567890ABCDEF
+   Material=Material'/Engine/Transient.Material_0'
+End Object
+
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_1"
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0"
+      A=(Expression=MaterialExpressionConstant2DBase'"MaterialGraphNode_2.MaterialExpressionConstant2D_0"')
+      B=(Expression=MaterialExpressionConstant2DBase'"MaterialGraphNode_3.MaterialExpressionConstant2D_1"')
+   End Object
+   MaterialExpression=MaterialExpressionMultiply'"MaterialExpressionMultiply_0"'
+   NodePosX=256
+   NodePosY=48
+End Object
+*/
+
+// 分析蓝图节点连接：
+// - 节点0: 输出节点
+// - 节点1: Multiply运算节点，接收两个float2输入
+// - 节点2: Constant2D节点（第一个输入）
+// - 节点3: Constant2D节点（第二个输入）
+
+// 转换为HLSL函数：
+/*
+// Custom节点: MultiplyVector2D
+// Inputs:
+//   - A (float2): 第一个向量
+//   - B (float2): 第二个向量
+// Output: float2 - 逐分量乘积
+
+float2 MultiplyVector2D(float2 A, float2 B)
+{
+    return A * B;
+}
+*/
+
+// 更复杂的蓝图示例（带纹理采样）：
+/*
+蓝图逻辑：
+1. TextureCoordinate节点 → UV
+2. TextureObject节点 → Tex
+3. TextureSample(UV, Tex) → 采样结果
+4. Multiply采样结果 × Constant3RGB(2.0) → 输出
+*/
+
+// 转换为HLSL：
+/*
+// Custom节点: TextureSampleBrightened
+// Inputs:
+//   - UV (float2): 纹理坐标，连接自TexCoord节点
+//   - Texture (Texture2D): 要采样的纹理
+// Output: float3 - 增亮后的RGB颜色
+
+float3 TextureSampleBrightened(float2 UV, Texture2D Texture)
+{
+    float4 SampledColor = Texture2DSample(Texture, TextureSampler, UV);
+    return SampledColor.rgb * 2.0;
+}
+
+// 注意：实际使用时需要在材质中设置：
+// 1. 创建Texture2D参数节点并连接
+// 2. 创建TextureSampler参数节点并连接
+// 或者使用材质自带的TextureObject节点类型
+*/
