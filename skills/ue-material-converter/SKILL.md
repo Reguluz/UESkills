@@ -60,6 +60,152 @@ When users provide UE material blueprint text (copied as code), analyze the node
 
 ---
 
+## HLSL to Blueprint Nodes（蓝图节点组合）
+
+当满足以下条件时，应优先使用蓝图节点组合而非 HLSL Custom 节点：
+
+### 使用蓝图节点的条件
+
+1. **蓝图节点功能足够**：算法可以用 UE 内置材质节点完整实现
+2. **用户明确要求**：用户明确提出希望使用蓝图节点方式
+3. **可读性和可维护性**：蓝图节点更易于理解和调试
+4. **性能考虑**：内置节点通常经过优化，性能更好
+5. **团队协作**：团队其他成员更熟悉蓝图节点
+
+### 常见适合蓝图节点的算法
+
+以下算法类型通常适合用蓝图节点实现：
+
+| 算法类型 | 推荐方式 | 原因 |
+|---------|---------|------|
+| 颜色插值/混合 | 蓝图节点 | `Lerp`、`Multiply`、`Add` 等基础节点直观易懂 |
+| 简单数学运算 | 蓝图节点 | `Max`、`Min`、`Clamp`、`Abs` 等内置节点足够 |
+| 向量操作 | 蓝图节点 | `Dot Product`、`Cross Product`、`Normalize` 节点齐全 |
+| 纹理采样 | 蓝图节点 | `TextureSample` 节点支持完整功能 |
+| 条件分支 | 蓝图节点 | `StaticSwitch`、`If` 节点功能完善 |
+| 简单噪声 | Custom 节点 | Perlin/Simplex 噪声通常需要自定义代码 |
+| 复杂 SDF | Custom 节点 | Raymarching 和 SDF 组合逻辑复杂 |
+| 自定义数学函数 | Custom 节点 | 特殊数学公式用代码更简洁 |
+
+### 蓝图节点组合示例
+
+#### 示例1：雾颜色渐变混合（适合蓝图节点）
+
+**需求描述**：
+- 在两种雾颜色之间基于输入值进行插值
+- 使用 Curve Atlas 或直接颜色插值
+- 应用静态开关选择模式
+
+**蓝图节点组合方式**：
+
+```
+输入参数：
+- FogDensity (float): 雾密度 0-1
+- FogThinColor (float3): 薄雾颜色 RGB(0.847, 0.888, 1.0)
+- FogThickColor (float3): 厚雾颜色 RGB(0.006, 0.091, 0.250)
+- GradientColor (bool): 是否使用曲线渐变
+
+节点组合：
+1. StaticSwitch (GradientColor)
+   ├─ True: CurveAtlasRowParameter
+   │   └─ 输入: ComponentMask(FogDensity, R)
+   │   └─ 输出: 渐变采样颜色
+   └─ False: Lerp (线性插值)
+       ├─ A: FogThinColor
+       ├─ B: FogThickColor
+       └─ Alpha: FogDensity
+
+输出：FogColor (float3)
+```
+
+**对应蓝图复制文本**：
+```
+Begin Object Class=/Script/UnrealEd.MaterialGraphNode Name="MaterialGraphNode_Lerp"
+   Begin Object Class=/Script/Engine.MaterialExpressionLinearInterpolate Name="MaterialExpressionLinearInterpolate_0"
+   End Object
+   Begin Object Name="MaterialExpressionLinearInterpolate_0"
+      A=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThinColor.MaterialExpressionVectorParameter_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'MaterialGraphNode_ThickColor.MaterialExpressionVectorParameter_1'")
+      Alpha=(Expression="/Script/Engine.MaterialExpressionReroute'MaterialGraphNode_Knot_0.MaterialExpressionReroute_0'")
+      MaterialExpressionEditorX=2688
+      MaterialExpressionEditorY=1024
+   End Object
+   MaterialExpression="/Script/Engine.MaterialExpressionLinearInterpolate'MaterialExpressionLinearInterpolate_0'"
+   NodePosX=2688
+   NodePosY=1024
+End Object
+```
+
+#### 示例2：亮度计算（适合蓝图节点）
+
+**需求**：使用感知亮度公式计算颜色亮度
+
+**蓝图节点组合**：
+```
+1. Constant3Vector: (0.2126, 0.7152, 0.0722) - 感知亮度权重
+2. DotProduct: Color.rgb ⊙ Weight
+3. Max(DotResult, 0.0001) - 避免除零
+```
+
+#### 示例3：复杂算法应使用 Custom 节点（对比）
+
+**需要 HLSL 的情况**：
+```hlsl
+// 这种复杂算法应该使用 Custom 节点
+struct MS_PerlinNoiseFBM
+{
+    float hash3(float3 p) { ... }
+    float perlinNoise(float3 p) { ... }
+    float fbm(float3 p, int iter) { ... }
+    float compute(float2 uv, float time, float scale, float speed, int iter) { ... }
+}
+MS_PerlinNoiseFBM_Inst;
+return MS_PerlinNoiseFBM_Inst.compute(UV, Time, Scale, Speed, Iter);
+```
+
+### 蓝图节点组合输出格式
+
+当决定使用蓝图节点时，按以下格式输出：
+
+```markdown
+## 蓝图节点组合方案
+
+### 输入参数
+| 参数名 | 类型 | 默认值 | 说明 |
+|-------|------|-------|------|
+| Density | float | 0.5 | 雾密度 [0,1] |
+| ThinColor | float3 | (0.847,0.888,1.0) | 薄雾颜色 |
+| ThickColor | float3 | (0.006,0.091,0.250) | 厚雾颜色 |
+| UseGradient | bool | false | 是否使用曲线渐变 |
+
+### 节点组合流程
+```
+[可使用 ASCII 图或 Mermaid 图表示节点连接]
+```
+
+### 节点详细说明
+1. **StaticSwitch_节点**
+   - 用途：模式切换
+   - 输入：UseGradient (bool)
+   
+2. **Lerp_节点**
+   - 用途：颜色线性插值
+   - A输入：ThinColor
+   - B输入：ThickColor  
+   - Alpha输入：Density
+
+### 蓝图复制文本
+[提供可复制粘贴的蓝图文本]
+
+### 优势说明
+- ✓ 使用内置节点，性能优化
+- ✓ 可视化连接，易于理解
+- ✓ 参数可在外部调整
+- ✓ 无需维护 HLSL 代码
+```
+
+---
+
 ## Shadertoy/GLSL to Custom Node Conversion
 
 ### Shader Variable Mapping

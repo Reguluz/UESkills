@@ -7,6 +7,7 @@
 1. **蓝图转HLSL函数** - 将UE材质蓝图的文本表示转换为HLSL函数
 2. **着色器转Custom节点** - 将Shadertoy/GLSL/HLSL着色器转换为UE Custom节点代码
 3. **结构体封装** - 对复杂算法使用结构体进行封装和调用
+4. **蓝图节点组合** - 对简单算法推荐并生成蓝图节点组合方案
 
 ## 安装
 
@@ -159,6 +160,41 @@ struct MS_ValueNoise
 
 MS_ValueNoise_Inst;
 return MS_ValueNoise_Inst.compute(UV, Scale);
+```
+
+### 示例3: 蓝图节点组合（简单算法）
+
+**输入需求**：
+```
+需要一个雾颜色混合函数：
+- 输入雾密度(0-1)、薄雾颜色、厚雾颜色
+- 在两种颜色之间线性插值
+- 可选使用 Curve Atlas 渐变
+- 应该用什么方式实现？
+```
+
+**Claude 分析**：
+✓ 推荐使用**蓝图节点组合**
+- 算法简单，只需 Lerp 和 StaticSwitch
+- 可视化节点更易维护
+- 可在材质实例中调整参数
+
+**输出：蓝图节点方案**
+```
+输入参数：
+- FogDensity (float): 雾密度 [0,1]
+- FogThinColor (float3): 薄雾颜色
+- FogThickColor (float3): 厚雾颜色
+- UseCurveGradient (bool): 使用曲线渐变
+
+节点组合：
+StaticSwitch(UseCurveGradient)
+├─ True: CurveAtlasRowParameter
+│   └─ 输入: ComponentMask(FogDensity, R)
+└─ False: Lerp
+    ├─ A: FogThinColor
+    ├─ B: FogThickColor
+    └─ Alpha: FogDensity
 ```
 
 ## 依赖关系

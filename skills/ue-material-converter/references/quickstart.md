@@ -50,6 +50,50 @@ cp -r ue-material-converter ~/.claude/skills/
 
 **问题**: 你有GLSL编写的着色器函数，需要在UE材质中使用。
 
+### 场景2.5: 蓝图节点组合（推荐简单算法）
+
+**问题**: 你有一个简单的算法需求，不确定用蓝图节点还是 Custom 节点。
+
+**解决**:
+1. 在Claude中输入需求描述
+2. Claude会根据复杂度推荐合适的方式
+3. 如果适合蓝图节点，提供节点组合方案
+
+**示例输入**：
+```
+我需要一个雾颜色混合函数：
+- 输入雾密度(0-1)
+- 在薄雾颜色和厚雾颜色之间插值
+- 可选使用 Curve Atlas 渐变
+- 应该用什么方式实现？
+```
+
+**Claude 分析**：
+这个需求适合使用**蓝图节点组合**，原因：
+- ✓ 只需要 Lerp 和 StaticSwitch 节点
+- ✓ 蓝图可视化更易维护
+- ✓ 可在材质实例中调整参数
+
+**输出：蓝图节点方案**
+```
+输入参数：
+- FogDensity (float): 雾密度 [0,1]
+- FogThinColor (float3): 薄雾颜色
+- FogThickColor (float3): 厚雾颜色
+- UseCurveGradient (bool): 使用曲线渐变
+
+节点组合：
+1. StaticSwitch(UseCurveGradient)
+   ├─ True: CurveAtlasRowParameter
+   │   └─ 输入: ComponentMask(FogDensity, R)
+   └─ False: Lerp
+       ├─ A: FogThinColor
+       ├─ B: FogThickColor
+       └─ Alpha: FogDensity
+```
+
+**问题**: 你有GLSL编写的着色器函数，需要在UE材质中使用。
+
 **解决**:
 1. 准备好GLSL代码
 2. 在Claude中输入：
